@@ -54,7 +54,8 @@ export async function mountAccount(config,state,callbacks){
  $('knowledge-upload').onclick=()=>action(async()=>{const units=callbacks.getKnowledge();validateKnowledge(units);const next=await client.saveKnowledgePackage(units,knowledgeVersion);knowledgeVersion=next;knowledgeStale=false;kstatus('知識包已同步到私人雲端（'+units.length+' 筆）。');});
  $('knowledge-download').onclick=()=>action(async()=>{if(!confirm('以雲端知識包取代此裝置的知識包？如要保留兩邊內容，請先匯出本機知識包。'))return;const remote=await client.loadKnowledgePackage();if(!remote){kstatus('雲端還沒有知識包。');return;}await applyKnowledge(remote.units);knowledgeVersion=remote.version;knowledgeStale=false;kstatus('已下載 '+remote.units.length+' 筆知識單元。');});
  $('account-logout').onclick=()=>action(async()=>{autosync.stop();logged=false;await client.signOut().catch(()=>{});callbacks.setStorageKey('college-os-guest');await replace(empty());callbacks.setAuthenticated(false);controls(false);kstatus('登出後，知識包仍依帳號分開保存在此瀏覽器。');$('storage-mode').textContent='已登出。此瀏覽器仍保留帳號的本機備份，與其他帳號隔離。';status('已登出。');});
- if(location.hash.includes('type=recovery')){const hash=location.hash;history.replaceState(null,'',location.pathname+location.search);await action(async()=>{if(await client.recoverFromHash(hash)){$('account-recovery').hidden=false;$('account-form').hidden=true;status('請設定新密碼。');}});}
+ const recoveryFlow=location.hash.includes('type=recovery');
+ if(recoveryFlow){const hash=location.hash;history.replaceState(null,'',location.pathname+location.search);await action(async()=>{if(await client.recoverFromHash(hash)){$('account-recovery').hidden=false;$('account-form').hidden=true;status('請設定新密碼。');}});}
  $('account-recovery').onsubmit=e=>{e.preventDefault();action(async()=>{await client.changePassword($('recovery-password').value);$('recovery-password').value='';await client.signOut();$('account-recovery').hidden=true;controls(false);status('密碼已更新，請重新登入。');});};
- if(!location.hash.includes('type=recovery')){await action(async()=>{const user=await client.restoreSession();if(user)await activate(user);});}
+ if(!recoveryFlow){await action(async()=>{const user=await client.restoreSession();if(user)await activate(user);});}
 }
