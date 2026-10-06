@@ -6,12 +6,13 @@ import {latexToReadable} from './math-format.mjs?v=3.5';
 import {validateKnowledge,validDate} from './life.mjs?v=3.5';
 import {readKnowledge,writeKnowledge} from './knowledge-store.mjs?v=3.5';
 import {mountWorkspace,renderPanorama} from './workspace.mjs?v=3.5';
+import {mountLearningLab} from './learning-lab.mjs?v=3.8';
 import {options,answerKeys,grade,filterUnits,addTask,decision} from './models.mjs?v=3.5';
 import {weekDates,eventsOn,conflicts,toICS,parseSchedule,excludeOccurrence,detachOccurrence,workloadByDay} from './calendar.mjs?v=3.5';
 import {createItemPdfExporter} from './pdf.mjs?v=3.5';
 const $=id=>document.getElementById(id);
 const today=new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'});
-const names={home:'今天，從一件重要的事開始。',library:'把散落的知識，找回來。',cards:'用自己的話，真正記住。',quiz:'用題目，確認理解。',decision:'決定下一步，開始累積。',calendar:'把時間，留給重要的事。',plans:'從目標，走到下一步。',journal:'把經驗，留下來。',review:'每週，校準一次方向。',finance:'讓每一筆錢，有跡可循。',settings:'保留資料，也保留選擇。'};
+const names={home:'今天，從一件重要的事開始。',library:'把散落的知識，找回來。',cards:'用自己的話，真正記住。','learning-lab':'AI × NLP 學習工作台',quiz:'用題目，確認理解。',decision:'決定下一步，開始累積。',calendar:'把時間，留給重要的事。',plans:'從目標，走到下一步。',journal:'把經驗，留下來。',review:'每週，校準一次方向。',finance:'讓每一筆錢，有跡可循。',settings:'保留資料，也保留選擇。'};
 const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}};
 const storageKey='college-os-v1';
 const exportItemPdf=createItemPdfExporter();
@@ -91,6 +92,8 @@ function errorsOnPage(){return !units.length;}
 async function refreshState(){schedule=state.schedule??{weeks:[],events:[]};if(state.privateUnits)await writeKnowledge(storageKey,state.privateUnits);else state.privateUnits=await readKnowledge(storageKey).catch(()=>[]);rebuildKnowledge();renderTasks();renderCalendar();document.dispatchEvent(new Event('college-saved'));document.dispatchEvent(new Event('college-state-restored'));}
 
 await init();
+
+if(document.body)mountLearningLab({state,save,getUnits:()=>units,go:page});
 
 if(document.body)mountExperience({getUnits:()=>units,getCards:()=>cards,getState:()=>state,getSchedule:()=>schedule,getDate:()=>selectedWeek,editEvent:(item,date)=>startEventEdit(item,date,Boolean(item._seriesId)),go:page,save,details,print:exportItemPdf,cardStart:startCardSession,cardRender:renderCard,libraryRender:renderLibrary,calendarRender:renderCalendar,quizRender:renderQuiz,quizReset:()=>{quizIndex=0;renderQuiz();},setDate:date=>{selectedWeek=date;$('report-date').value=date;renderCalendar();},importSchedule:importScheduleText});
 
