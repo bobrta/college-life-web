@@ -94,15 +94,16 @@ export function mountLearningLab({state,save,getUnits,go}){
     const list=$('learning-unit-list'),category=topicSelect.value;
     list.replaceChildren();$('learning-units-pager').replaceChildren();
     if(!category){list.append(el('p','先選上方的主題分類和單元，這裡才會列出小組知識卡。','empty'));return;}
-    const rows=getUnits().filter(unit=>topicOf(unit)===category&&unit.kind!=='question');
-    if(!rows.length){list.append(el('p','這個單元還沒有匯入內容。請貼課堂材料，或到知識資料夾確認題庫主題。','empty'));return;}
+    const rows=getUnits().filter(unit=>topicOf(unit)===category);
+    if(!rows.length){list.append(el('p','這個單元目前沒有可選內容。你可以貼上老師教材，或改選其他單元。','empty'));return;}
     const pageCount=Math.max(1,Math.ceil(rows.length/unitPageSize));unitPage=Math.max(0,Math.min(unitPage,pageCount-1));
     rows.slice(unitPage*unitPageSize,(unitPage+1)*unitPageSize).forEach(unit=>{
       const label=el('label',undefined,'learning-unit');
       const check=el('input');check.type='checkbox';check.value=unit.id;check.checked=selectedUnitIds.has(unit.id);
       check.onchange=()=>{if(check.checked){if(selectedUnitIds.size>=5){check.checked=false;$('learning-unit-status').textContent='一輪先選 5 筆內，避免提示詞塞太多內容。';return;}selectedUnitIds.add(unit.id);}else selectedUnitIds.delete(unit.id);$('learning-unit-status').textContent=`已選 ${selectedUnitIds.size} / 5 筆。`;};
       const kindLabel={question:'題庫題目',concept:'概念卡',note:'筆記',research:'研究摘要',formula:'公式／模型',flashcard:'翻讀卡'}[unit.kind]||'知識單元';
-      label.append(check,el('span',unit.title||readable(unit.core_concept).slice(0,55)),el('small',kindLabel));list.append(label);
+      const record=unit.original_record||{};const itemTitle=unit.title||readable(record.question||record.scenario||unit.core_concept).slice(0,90)||'未命名題目';
+      label.append(check,el('span',itemTitle),el('small',kindLabel));list.append(label);
     });
     if(rows.length>unitPageSize){const previous=el('button','上一頁','secondary');previous.type='button';previous.disabled=unitPage===0;previous.onclick=()=>{unitPage--;renderUnits();};const next=el('button','下一頁','secondary');next.type='button';next.disabled=unitPage>=pageCount-1;next.onclick=()=>{unitPage++;renderUnits();};$('learning-units-pager').append(previous,el('span',`${unitPage+1} / ${pageCount} · ${rows.length} 筆`),next);}
     $('learning-unit-status').textContent=`已選 ${selectedUnitIds.size} / 5 筆。`;
