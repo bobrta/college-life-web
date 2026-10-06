@@ -1,5 +1,5 @@
-import {validateDecision} from './management.mjs';
-import {parseSchedule} from './calendar.mjs';
+import {validateDecision} from './management.mjs?v=3.4';
+import {parseSchedule} from './calendar.mjs?v=3.4';
 export const localDate=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'});
 export function validDate(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;}
 export function amountCents(value){const text=String(value).trim();if(!/^\d+(\.\d{1,2})?$/.test(text))throw Error('金額需為正數，最多兩位小數。');const [a,b='']=text.split('.');const n=Number(a)*100+Number(b.padEnd(2,'0'));if(!Number.isSafeInteger(n)||n<=0||n>1e11)throw Error('金額超出範圍。');return n;}

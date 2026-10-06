@@ -1,6 +1,6 @@
-import {financialOverview} from './finance.mjs';
-import {migrate,localDate,validDate,amountCents,moneySummary,weeklyReport,planProgress,validateBackup} from './life.mjs';
-import {weekDates,eventsOn,conflicts} from './calendar.mjs';
+import {financialOverview} from './finance.mjs?v=3.4';
+import {migrate,localDate,validDate,amountCents,moneySummary,weeklyReport,planProgress,validateBackup} from './life.mjs?v=3.4';
+import {weekDates,eventsOn,conflicts} from './calendar.mjs?v=3.4';
 const $=id=>document.getElementById(id);
 function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 const money=c=>new Intl.NumberFormat('zh-TW',{style:'currency',currency:'TWD',minimumFractionDigits:0,maximumFractionDigits:2}).format(c/100);
