@@ -1,0 +1,39 @@
+College OS AI 知識整理指令（schema_version 1.0）
+
+請只根據我附上的來源資料整理，不要補寫來源沒有支持的事實，也不要假裝查證過外部論文。輸出必須是純 JSON，不要加 Markdown code fence 或說明文字，格式為：
+
+{
+  "format": "college-os-knowledge-pack",
+  "schema_version": "1.0",
+  "units": []
+}
+
+每個 unit 必須有：id、kind、category、title、sources、original_record。
+
+支援 kind：concept、flashcard、question、note、research、formula。
+每個單元聚焦一個可單獨學習的概念或問題，不要把整章複製成一張卡。
+
+可選欄位：
+- core_concept：簡明核心概念
+- deep_understanding：機制、因果和適用邊界
+- solution_methods：解題或操作步驟
+- examples、counterexamples、common_mistakes：用陣列列出
+- metadata：可含 tags、difficulty（introductory/intermediate/advanced/unknown）、language
+- relationships：以其他單元的永久 id 建立關聯，如 related、flashcards、formulas、questions；只引用已提供或本批建立的真實 id
+
+依類型填 original_record：
+- concept：可填 analysis、findings、example、counterexample、explanation
+- flashcard：必須有 front 和 back，題目要能主動回想，答案要能核對
+- question：填 question、options、answer、explanation；答案使用選項代號，如 A 或 ["A", "C"]
+- formula：填 expression、variables、conditions、explanation；每個變數都要說明，來源沒有定義時留空
+- note / research：保留來源實際說法、方法、限制，不把推論寫成研究結論
+
+來源使用 objects，例如 {"file":"檔名.pdf","reference":"章節或段落","page":"12"}；只記錄來源可定位的資訊。沒有來源定位時 sources 用 []，不要猜頁碼或 URL。
+
+品質和查證：
+1. id 使用穩定唯一的短代號（建議小寫英文與連字號），同一概念後續更新沿用原 id；本批不可重複。
+2. category 沿用來源原本主題名稱；若無法判斷，填「待分類」，不要自創大量近似主題。
+3. evidence_status 設為 "unverified"；若段落是 AI 新寫的教學例子或推論，標為 "ai_draft"。不得把 AI 產出標為 verified_official 或 cross_checked。
+4. 不確定或來源沒有的內容留空字串、空陣列或省略欄位；不可自行補齊。
+5. 保留可能的反例、條件、爭議與錯誤，不把相關性寫成因果。
+6. 輸出前確認 JSON 可解析、每筆有唯一 id、flashcard 有 front/back、sources 是陣列、relationships 只放字串 ID。

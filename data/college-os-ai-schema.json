@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://college-os.local/schema/knowledge-pack-1.0.json",
+  "title": "College OS Knowledge Pack",
+  "description": "可匯入 College OS 的知識包；每個單元以穩定 ID 關聯。",
+  "type": "object",
+  "required": [
+    "format",
+    "schema_version",
+    "units"
+  ],
+  "properties": {
+    "format": {
+      "const": "college-os-knowledge-pack"
+    },
+    "schema_version": {
+      "const": "1.0"
+    },
+    "source_metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "units": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "$ref": "#/$defs/unit"
+      }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "unit": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "category",
+        "title",
+        "sources",
+        "original_record"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120,
+          "description": "永久且唯一；建議小寫英文、數字與連字號。"
+        },
+        "kind": {
+          "enum": [
+            "concept",
+            "question",
+            "note",
+            "flashcard",
+            "research",
+            "formula"
+          ]
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "core_concept": {
+          "type": "string"
+        },
+        "deep_understanding": {
+          "type": "string"
+        },
+        "solution_methods": {
+          "type": [
+            "string",
+            "array"
+          ]
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "object"
+            ]
+          }
+        },
+        "counterexamples": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "object"
+            ]
+          }
+        },
+        "common_mistakes": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "object"
+            ]
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "file": {
+                "type": "string"
+              },
+              "reference": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "page": {
+                "type": [
+                  "string",
+                  "integer"
+                ]
+              },
+              "quote": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          }
+        },
+        "evidence_status": {
+          "enum": [
+            "verified_official",
+            "cross_checked",
+            "unverified",
+            "ai_draft"
+          ]
+        },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "difficulty": {
+              "enum": [
+                "introductory",
+                "intermediate",
+                "advanced",
+                "unknown"
+              ]
+            },
+            "language": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": true
+        },
+        "relationships": {
+          "type": "object",
+          "description": "以其他單元的永久 ID 建立關聯；不要編造不存在的 ID。",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "uniqueItems": true
+          }
+        },
+        "original_record": {
+          "type": "object",
+          "description": "保留原始結構；不同 kind 可使用不同欄位。",
+          "additionalProperties": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "flashcard"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "original_record": {
+                "required": [
+                  "front",
+                  "back"
+                ],
+                "properties": {
+                  "front": {
+                    "type": "string"
+                  },
+                  "back": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ],
+      "additionalProperties": true
+    }
+  }
+}
