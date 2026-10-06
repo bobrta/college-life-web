@@ -1,4 +1,4 @@
-import {options,answerKeys} from './models.mjs?v=3.4';
+import {options,answerKeys} from './models.mjs?v=3.5';
 export const typeNames={concept:'概念',flashcard:'翻讀卡',question:'題目',note:'筆記',research:'研究摘要',formula:'公式／模型'};
 export function readable(value){if(value===null||value===undefined)return '';if(Array.isArray(value))return value.map(readable).filter(Boolean).join('\n');if(typeof value==='object')return Object.entries(value).map(([key,v])=>`${key}：${readable(v)}`).join('\n');return String(value);}
 export function topicOf(unit){return readable(unit.category).trim()||'未分類';}

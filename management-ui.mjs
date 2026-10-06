@@ -1,5 +1,5 @@
-import {rankOptions,quadrant,decisionStage,planningFeedback} from './management.mjs?v=3.4';
-import {localDate,validDate} from './life.mjs?v=3.4';
+import {rankOptions,quadrant,decisionStage,planningFeedback} from './management.mjs?v=3.5';
+import {localDate,validDate} from './life.mjs?v=3.5';
 const $=id=>document.getElementById(id);
 function el(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 function button(text,fn,cls='secondary'){const n=el('button',text,cls);n.type='button';n.onclick=fn;return n;}

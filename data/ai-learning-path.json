@@ -1,0 +1,1056 @@
+[
+  {
+    "id": "ai-path-roadmap",
+    "kind": "concept",
+    "title": "AI 學習路徑：從問題到可用系統",
+    "category": "使用者提供教材｜AI 與學習科學｜00｜總路徑",
+    "core_concept": "地圖：問題定義 → 資料與基準線 → 機器學習 → 深度學習 → NLP／Transformer → 檢索與生成 → 評估與部署 → 監控與迭代。",
+    "deep_understanding": "不要先追模型名詞。每一階段都要有可觀察產出：資料檢查、可重現基準、錯誤分析、可比較評估、可監控服務。數學與程式依專案需要逐步補，不必先學完全部數學才動手。",
+    "solution_methods": "先用一個小型文本分類專案貫穿路徑：定義用途與錯誤成本，建立資料切分和簡單基準，再比較模型，最後寫限制與使用說明。每週用回想測試決定要補哪個前置概念。",
+    "examples": "六週起步：1 問題／Python／資料；2 分割、基準線與分類指標；3 神經網路概念；4 NLP 表徵與 Transformer；5 RAG 與檢索評估；6 誤差分析、部署草圖與回顧。每週 2–4 次 25–45 分鐘，以實際空檔調整。",
+    "common_mistakes": "跳過評估就直接做聊天機器人；把課程順序當成每人固定速度。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      },
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      },
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "AI 學習路徑：從問題到可用系統",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-problem-framing",
+    "kind": "concept",
+    "title": "問題定義與成功指標",
+    "category": "使用者提供教材｜AI 與學習科學｜01｜機器學習基礎",
+    "core_concept": "先決定輸入、輸出、使用者、決策方式及錯誤代價，再決定要不要用機器學習。",
+    "deep_understanding": "同一資料可支援不同目標；指標必須反映真實決策。例如篩檢更在意漏掉正例，排序更在意前段結果品質。",
+    "solution_methods": "寫一頁任務卡：預測對象、可用資料、標籤定義、基準做法、成功指標、風險及人工覆核點。",
+    "examples": "垃圾郵件分類：先定義誤把正常信丟進垃圾箱的代價，而非只追整體準確率。",
+    "common_mistakes": "把模型分數當成目標本身，忽略流程中的人與成本。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "問題定義與成功指標",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-data-split",
+    "kind": "concept",
+    "title": "訓練、驗證、測試與資料洩漏",
+    "category": "使用者提供教材｜AI 與學習科學｜01｜機器學習基礎",
+    "core_concept": "訓練資料用來學參數；驗證資料用來選模型／設定；測試資料最後用來估計泛化表現。",
+    "deep_understanding": "切分方式要符合未來使用情境。時間序列按時間切、同一人的資料需避免跨組洩漏；預處理也只能在訓練資料 fit。",
+    "solution_methods": "先畫一列資料進入模型的時間線；列出每個欄位何時可取得，再做切分並檢查重複個體、未來資訊及目標洩漏。",
+    "examples": "用過去月份預測下月：以較早月份訓練、後續月份驗證，最後留最新期間測試。",
+    "common_mistakes": "先看測試集再反覆調模型；把預測後才知道的欄位當特徵。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "problem-framing"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "訓練、驗證、測試與資料洩漏",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-baseline",
+    "kind": "concept",
+    "title": "基準線與簡單模型",
+    "category": "使用者提供教材｜AI 與學習科學｜01｜機器學習基礎",
+    "core_concept": "基準線提供最低可比較標準；先證明資料與任務有訊號，再增加模型複雜度。",
+    "deep_understanding": "基準線可以是多數類別、簡單規則、線性模型或現行人工流程。可重現基準比追逐新模型更能定位改進來源。",
+    "solution_methods": "記錄固定切分、指標、亂數種子及環境；每次只改一個因素，與基準及上一版比較。",
+    "examples": "文本分類先試詞袋＋邏輯斯迴歸，再比較預訓練 Transformer。",
+    "common_mistakes": "只報最好一次結果；基準線不公平或資料切分不同。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      },
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "data-split"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "基準線與簡單模型",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-metrics",
+    "kind": "concept",
+    "title": "分類指標與錯誤代價",
+    "category": "使用者提供教材｜AI 與學習科學｜01｜機器學習基礎",
+    "core_concept": "Accuracy 是答對比例；Precision 看預測為正的案例有多少真為正；Recall 看實際正例抓到多少；F1 平衡 precision 與 recall。",
+    "deep_understanding": "指標沒有脫離情境的「最好」。類別不平衡時 accuracy 可能掩蓋失敗；需查看混淆矩陣、閾值及各群體表現。",
+    "solution_methods": "先定義正類，再列假陽性／假陰性成本；選對應指標並報告混淆矩陣與資料基準率。",
+    "examples": "疾病初篩可同時呈現 recall 和後續確認成本，不能只報 accuracy。",
+    "common_mistakes": "只挑一個高分數字；跨不同資料集直接比較指標。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "problem-framing",
+        "data-split"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "分類指標與錯誤代價",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-generalization",
+    "kind": "concept",
+    "title": "過度擬合、欠擬合與泛化",
+    "category": "使用者提供教材｜AI 與學習科學｜01｜機器學習基礎",
+    "core_concept": "泛化是模型在未見資料上仍能完成任務的能力。訓練好、驗證差常見於過度擬合；兩者都差可能是欠擬合或資料／目標不匹配。",
+    "deep_understanding": "正則化、更多代表性資料、合適模型複雜度可能幫助；診斷先看切分、標籤、訓練曲線及分群錯誤，不能只盲目加資料。",
+    "solution_methods": "畫訓練與驗證學習曲線；檢查差距、資料品質與分布後，再做一個針對性改動。",
+    "examples": "訓練準確率 99%、驗證 72%，先檢查過度擬合與切分，而不是宣稱模型已完成。",
+    "common_mistakes": "把單次測試分數視為未來保證。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "baseline",
+        "data-split"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "過度擬合、欠擬合與泛化",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-error-analysis",
+    "kind": "concept",
+    "title": "錯誤分析：把分數變成下一個實驗",
+    "category": "使用者提供教材｜AI 與學習科學｜01｜機器學習基礎",
+    "core_concept": "整體指標告訴你「有沒有改善」；錯誤分類幫你判斷「該改什麼」。",
+    "deep_understanding": "把錯誤按可修正原因分桶，如標籤品質、長文本、罕見類別、歧義或分布變化。按影響與可行性排序，選最小實驗驗證。",
+    "solution_methods": "抽樣檢視正確與錯誤案例；整理錯誤類型、數量、嚴重度；提出可反駁假設；設計下一次比較。",
+    "examples": "如果否定案例都來自新詞彙，測試增加詞彙覆蓋後 recall 是否改善。",
+    "common_mistakes": "只讀失敗例子而不統計；看到一例就改規則。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      },
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "metrics",
+        "generalization"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "錯誤分析：把分數變成下一個實驗",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-features",
+    "kind": "concept",
+    "title": "特徵、表徵與資料品質",
+    "category": "使用者提供教材｜AI 與學習科學｜01｜機器學習基礎",
+    "core_concept": "特徵是模型可讀取的輸入；表徵把資料轉成便於模型使用的形式。特徵工程依任務與可用時間設計。",
+    "deep_understanding": "良好特徵不能修復錯誤標籤或不具代表性的抽樣；每個特徵要考慮可得性、隱私、偏誤、成本與上線一致性。",
+    "solution_methods": "先列出原始訊息如何轉成輸入，逐項檢查缺失、洩漏、分布、群體差異及部署時是否可取得。",
+    "examples": "日期欄位可分解為星期或季節；郵件文字可先用詞袋，再試 embeddings。",
+    "common_mistakes": "把相關性當成因果；使用上線時不可用的特徵。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      },
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "data-split"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "特徵、表徵與資料品質",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-neural-net",
+    "kind": "concept",
+    "title": "神經網路：層、參數、損失、梯度",
+    "category": "使用者提供教材｜AI 與學習科學｜02｜深度學習",
+    "core_concept": "神經網路以多層可學習函數組合輸入；損失函數衡量預測與目標的差距，梯度提供參數更新方向。",
+    "deep_understanding": "訓練是以資料與最佳化器反覆更新參數；架構、資料、損失和最佳化方式共同影響結果。深度不等於理解或正確。",
+    "solution_methods": "用小型例子追蹤一次前向預測、計算損失、反向傳播、更新參數；先確認張量形狀與標籤定義。",
+    "examples": "影像分類輸入像素張量，輸出各類別機率，交叉熵比較預測與正確類別。",
+    "common_mistakes": "只背層名稱；看到 loss 降低就認定模型能泛化。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "generalization"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "神經網路：層、參數、損失、梯度",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-tokenization",
+    "kind": "concept",
+    "title": "文字正規化與 Tokenization",
+    "category": "使用者提供教材｜AI 與學習科學｜03｜自然語言處理",
+    "core_concept": "Tokenization 把文字切成模型處理的 token 單位；token 不一定等於中文單字、英文單字或一個字元。",
+    "deep_understanding": "切分方案影響詞彙表大小、序列長度、罕見詞表示與推理成本。前處理必須與預訓練模型的 tokenizer 配套。",
+    "solution_methods": "用實際中英混合句觀察 token、特殊符號、截斷和長度；測試網址、專有名詞、錯字及標點。",
+    "examples": "同一句中文經不同 tokenizer 可能切成不同數量的子詞 token。",
+    "common_mistakes": "假設一個 token 就是一個詞；自行換 tokenizer 但不調整模型。",
+    "sources": [
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "文字正規化與 Tokenization",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-embeddings",
+    "kind": "concept",
+    "title": "詞向量與 Embeddings",
+    "category": "使用者提供教材｜AI 與學習科學｜03｜自然語言處理",
+    "core_concept": "Embedding 將離散 token 或文字轉成向量，讓模型可依訓練目標使用語義／上下文相關資訊。",
+    "deep_understanding": "向量距離只在特定模型、資料與訓練目標下有意義；相近不代表兩句事實等價。句子檢索常需專用 embedding 與適當評估。",
+    "solution_methods": "挑一個檢索任務，建立查詢—正例—難負例的小測試集，量測 recall@k 等檢索指標，再檢視失敗案例。",
+    "examples": "在課堂筆記中查找與問題最相關段落，測試前幾個檢索結果是否含答案。",
+    "common_mistakes": "把 embedding 當作真理資料庫；只看二維投影判斷品質。",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      },
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "tokenization"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "詞向量與 Embeddings",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-nlp-tasks",
+    "kind": "concept",
+    "title": "NLP 任務地圖",
+    "category": "使用者提供教材｜AI 與學習科學｜03｜自然語言處理",
+    "core_concept": "常見任務包括分類、序列標註、資訊擷取、相似度／檢索、摘要、翻譯與生成。任務不同，輸出與評估不同。",
+    "deep_understanding": "先釐清任務是否需要生成；封閉標籤分類通常可用更簡單可控的模型。把複合需求拆成可測試子任務。",
+    "solution_methods": "對每個任務寫輸入、預期輸出、錯誤案例、主要指標與人工驗證方式。",
+    "examples": "辨識意圖是分類；從履歷抽取日期是資訊擷取；找相關段落是檢索。",
+    "common_mistakes": "所有文字任務都直接交給生成式 LLM。",
+    "sources": [
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      },
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "problem-framing",
+        "tokenization"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "NLP 任務地圖",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-attention-transformer",
+    "kind": "concept",
+    "title": "Attention 與 Transformer",
+    "category": "使用者提供教材｜AI 與學習科學｜04｜Transformer 與 LLM",
+    "core_concept": "Attention 讓序列中位置依內容彼此加權；Transformer 以注意力和前饋層等組成序列模型。原始架構採 attention，移除循環與卷積結構。",
+    "deep_understanding": "Self-attention 可建立上下文依賴，但計算與記憶體成本會隨序列長度增加；實際模型另有位置資訊、正規化、訓練目標及不同變體。",
+    "solution_methods": "以短句標出某 token 在預測時可能需要參照的上下文；再分辨 encoder、decoder 與 encoder-decoder 用途。",
+    "examples": "翻譯模型可以編碼輸入句，再逐步生成目標文字；decoder-only 模型常以先前 token 預測下一 token。",
+    "common_mistakes": "把 attention 權重直接當成忠實的人類可讀解釋；以為所有 Transformer 一樣。",
+    "sources": [
+      {
+        "reference": "Vaswani et al. (2017), Attention Is All You Need",
+        "url": "https://arxiv.org/abs/1706.03762"
+      },
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "tokenization",
+        "neural-net"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "Attention 與 Transformer",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-llm-limitations",
+    "kind": "concept",
+    "title": "LLM 的預測能力與限制",
+    "category": "使用者提供教材｜AI 與學習科學｜04｜Transformer 與 LLM",
+    "core_concept": "LLM 常以預測下一 token 等訓練目標學得統計模式，能產生流暢文字；流暢不保證事實正確、完整或符合你的資料。",
+    "deep_understanding": "模型行為受訓練資料、提示、解碼、檢索上下文與後處理影響。要依任務測幻覺、拒答、偏誤、隱私與成本。",
+    "solution_methods": "給定一組有來源的標準問題和無法回答的問題，測準確性、引用支持度、拒答及錯誤類型。",
+    "examples": "要求模型摘要課文時，抽查每個關鍵結論能否回到原文頁碼。",
+    "common_mistakes": "把語氣自信當成證據；把模型生成內容直接當成教材。",
+    "sources": [
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      },
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "attention-transformer"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "LLM 的預測能力與限制",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-finetune-rag",
+    "kind": "concept",
+    "title": "何時用提示、檢索增強生成或微調",
+    "category": "使用者提供教材｜AI 與學習科學｜05｜檢索與生成",
+    "core_concept": "提示提供任務規則；RAG 在作答時檢索外部資料；微調更新模型參數以改變特定模式或能力表現。",
+    "deep_understanding": "RAG 適合需要可更新外部知識與來源線索的情境，但檢索、切塊、權限和引用都要評估。微調不等於可靠地注入最新事實。可先用最簡單方案做基準。",
+    "solution_methods": "比較三者的資料更新頻率、可追溯性、標註量、成本、延遲、隱私及錯誤控制，再用代表性案例試跑。",
+    "examples": "課程 FAQ 常變動且答案要附來源，可先做 RAG；固定輸出格式可能先試提示與驗證。",
+    "common_mistakes": "因為有 RAG 就假設不會幻覺；微調前不先建立評估集。",
+    "sources": [
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      },
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "llm-limitations",
+        "embeddings"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "何時用提示、檢索增強生成或微調",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-rag-eval",
+    "kind": "concept",
+    "title": "RAG 評估：檢索和回答分開測",
+    "category": "使用者提供教材｜AI 與學習科學｜05｜檢索與生成",
+    "core_concept": "RAG 至少有兩段：找對上下文、根據上下文回答。端到端答案錯誤需拆分定位。",
+    "deep_understanding": "檢索可看 Recall@k／MRR 等；生成要看答案正確性、證據支持、引用可核對、拒答與延遲成本。指標需配人工抽查。",
+    "solution_methods": "建立包含查詢、標準答案、必要來源段落的測試集；分別標記檢索漏失、上下文噪音、回答推論錯誤。",
+    "examples": "正確答案不在 top-k，是檢索問題；答案與來源矛盾，是生成／證據約束問題。",
+    "common_mistakes": "只測幾個漂亮示範問題；用 LLM 自評取代標準答案或人工核對。",
+    "sources": [
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      },
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "finetune-rag"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "RAG 評估：檢索和回答分開測",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-ml-pipeline",
+    "kind": "concept",
+    "title": "AI 系統端到端架構",
+    "category": "使用者提供教材｜AI 與學習科學｜06｜AI 系統與維運",
+    "core_concept": "基本生命週期：需求與風險 → 資料收集／標註 → 資料驗證 → 訓練／基準 → 離線評估 → 部署 → 線上監控 → 回饋與版本迭代。",
+    "deep_understanding": "資料、程式、模型、評估集、設定都需能版本追蹤。線上系統需考慮延遲、可用性、隱私、權限、回退和人工介入。",
+    "solution_methods": "先畫資料流與信任邊界；每個階段註明輸入、輸出、責任人、品質檢查、失敗處理與版本。",
+    "examples": "校園問答助理：教材入庫 → 權限與切塊 → 檢索基準 → 答案與來源評估 → 小範圍試用 → 回報錯誤 → 更新教材。",
+    "common_mistakes": "把模型視為整個產品；忘記資料和使用流程也是系統的一部分。",
+    "sources": [
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      },
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "problem-framing",
+        "baseline"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "AI 系統端到端架構",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-monitoring",
+    "kind": "concept",
+    "title": "部署後監控與漂移",
+    "category": "使用者提供教材｜AI 與學習科學｜06｜AI 系統與維運",
+    "core_concept": "線上監控涵蓋服務健康（延遲、錯誤率、成本）、輸入／輸出品質、資料分布及使用者結果。漂移需先界定要監控的量與可採取動作。",
+    "deep_understanding": "監控不能單靠一個漂移警報；標籤往往延遲取得。應設定資料品質、代表性切片、人工抽樣、回退門檻和負責人。",
+    "solution_methods": "列出模型可能失效方式；每項配一個可觀測訊號、警戒門檻、查證方式和安全回退。",
+    "examples": "課程規則更新後，問答引用舊規則變多，應追蹤文件版本與答案引用。",
+    "common_mistakes": "只看伺服器是否在線；未經診斷自動重訓。",
+    "sources": [
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "ml-pipeline",
+        "error-analysis"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "部署後監控與漂移",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-responsible-ai",
+    "kind": "concept",
+    "title": "隱私、公平、安全與人工覆核",
+    "category": "使用者提供教材｜AI 與學習科學｜06｜AI 系統與維運",
+    "core_concept": "風險評估從受影響對象、可能傷害、資料敏感度、錯誤代價和可逆性開始；高影響決策需要適當人工監督與申訴途徑。",
+    "deep_understanding": "技術測試不能取代治理。只收必要資料、設權限與保存期限、測試不同群體、允許更正／拒答／升級人工，並記錄版本。",
+    "solution_methods": "做一頁風險表：傷害、可能性、受影響群體、預防、偵測、回復及負責人。",
+    "examples": "升學資料助理可提供政策連結與問題整理，不應自行替學生做不可逆的正式決策。",
+    "common_mistakes": "把「AI 倫理」縮成一句免責聲明；假設平均準確就代表公平。",
+    "sources": [
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [
+        "ml-pipeline"
+      ],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "隱私、公平、安全與人工覆核",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-retrieval-practice",
+    "kind": "concept",
+    "title": "提取練習：先回想再看答案",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "提取練習是先嘗試從記憶提取，再比對與修正；測驗不只檢查，也能增進長期保持。",
+    "deep_understanding": "難度要適中並有回饋。錯答後立即讀解釋，再重新用自己的話回答，比反覆猜更有效。",
+    "solution_methods": "關書寫下核心概念、例子和易混點；翻卡核對；把漏掉的一點轉成下次提示。",
+    "examples": "學完資料切分後，不看筆記畫出 train／validation／test 的分工。",
+    "common_mistakes": "把重讀或反覆看答案誤當成已會；沒有回饋地硬猜。",
+    "sources": [
+      {
+        "reference": "Roediger & Karpicke (2006), Test-Enhanced Learning",
+        "url": "https://doi.org/10.1037/0033-2909.132.3.354"
+      },
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "提取練習：先回想再看答案",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-spacing",
+    "kind": "concept",
+    "title": "間隔練習：分散複習而非一次塞滿",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "把練習分散到多次學習通常有助於延後記憶測試表現；間隔多長取決於目標延遲與內容。",
+    "deep_understanding": "固定 1、3、7、14 天只是起點，不是對每人每內容最佳的科學定律。用答對率、熟練度與下次使用日期調整。",
+    "solution_methods": "安排短回想：當天建立、隔天重取、數日後混合測、考前做情境應用；失敗項目縮短間隔。",
+    "examples": "用小卡在一週內多次閉卷回想，比單次讀完整章更能看出記憶保持。",
+    "common_mistakes": "將間隔表當成僵硬規則；同一難度全部排同樣頻率。",
+    "sources": [
+      {
+        "reference": "Cepeda et al. (2006), Distributed practice in verbal recall tasks: A review and quantitative synthesis",
+        "url": "https://doi.org/10.1037/0033-2909.132.3.354"
+      },
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "間隔練習：分散複習而非一次塞滿",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-interleaving",
+    "kind": "concept",
+    "title": "交錯練習：混合易混概念來練辨別",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "交錯練習把不同但相關的問題類型穿插，使學習者練習辨認應採用哪種方法；是否有益取決於材料和任務。",
+    "deep_understanding": "先有基本理解，再混合相近概念較適合。初學完全陌生內容時先短區塊建立心智模型，再加入交錯。",
+    "solution_methods": "先分別練 A、B 方法各幾題，再混合題目並要求先說「辨識線索」與選法理由。",
+    "examples": "比較分類與檢索、precision 與 recall 的適用情境。",
+    "common_mistakes": "把不同學科任意混在一起，誤以為越亂越有效。",
+    "sources": [
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      },
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "交錯練習：混合易混概念來練辨別",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-feedback",
+    "kind": "concept",
+    "title": "回饋迴路：錯誤要變成下一步",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "有效回饋指出目標差距、錯誤原因和可執行下一步；回饋應能讓學習者修正，而非只給分數。",
+    "deep_understanding": "回饋品質與時機取決於任務；初學可快速給出正確性和短解釋，複雜任務則需過程與延遲回看。",
+    "solution_methods": "每次錯誤記三項：我原本怎麼想、哪個線索被忽略、下一題我要採用什麼檢查步驟。",
+    "examples": "錯題不是「不會」，而是記下混淆兩個指標的線索，下一次先比較正類基準率。",
+    "common_mistakes": "只紀錄分數或情緒；反饋太多但沒有指定行動。",
+    "sources": [
+      {
+        "reference": "Roediger & Karpicke (2006), Test-Enhanced Learning",
+        "url": "https://doi.org/10.1037/0033-2909.132.3.354"
+      },
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "回饋迴路：錯誤要變成下一步",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-self-explanation",
+    "kind": "concept",
+    "title": "自我解釋與例題淡出",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "自我解釋是說明每一步為何成立、如何連接先備知識；例題可降低初學者無目的搜尋，熟悉後逐步移除提示。",
+    "deep_understanding": "先做 worked example，再補上缺步、變式題、獨立解題，能避免只會照抄程序。要檢查解釋是否正確。",
+    "solution_methods": "看一個完整範例→遮住每一步解釋原因→完成缺步→做不同表面情境的新題。",
+    "examples": "走讀一次資料切分範例後，自己判斷一個時間序列如何切分。",
+    "common_mistakes": "初學就丟進完全開放專案；抄範例但沒講出理由。",
+    "sources": [
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "自我解釋與例題淡出",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-metacognition",
+    "kind": "concept",
+    "title": "後設認知：信心要和表現校準",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "後設認知是監控自己的理解與策略；主觀熟悉感容易高估真正能否提取或遷移。",
+    "deep_understanding": "把答題信心與實際結果對照，能找到「自認會但測不出」的盲點。規劃策略需要根據證據更新。",
+    "solution_methods": "答題前標信心 1–3；答後記正誤和原因；每週檢查哪些類型過度自信，再調整練習。",
+    "examples": "能認出 Transformer 名詞，但不會畫資料流，代表辨認熟悉不等於可解釋。",
+    "common_mistakes": "只憑「看起來懂」決定停止學習；過度用一週分數定義能力。",
+    "sources": [
+      {
+        "reference": "Roediger & Karpicke (2006), Test-Enhanced Learning",
+        "url": "https://doi.org/10.1037/0033-2909.132.3.354"
+      },
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "後設認知：信心要和表現校準",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-cognitive-load",
+    "kind": "concept",
+    "title": "認知負荷與鷹架：一次只處理一層新東西",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "工作記憶有限；教學可減少與目標無關的搜尋，讓注意力集中在新概念及其關係。",
+    "deep_understanding": "拆小步、清楚標示、範例與圖表能在複雜初學任務中提供鷹架；熟練後應淡出，避免過度簡化。",
+    "solution_methods": "把內容分成先備概念、單一步驟、整體流程、獨立遷移；遇到卡點先縮小到一個可檢查問題。",
+    "examples": "先理解 tokenization，再看 embedding，再把它放進 Transformer 流程。",
+    "common_mistakes": "同時看長影片、抄筆記、聊天和做題；把學習風格標籤當作固定能力。",
+    "sources": [
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      },
+      {
+        "reference": "Pashler et al. (2008), Learning Styles: Concepts and Evidence",
+        "url": "https://doi.org/10.1111/j.1539-6053.2009.01038.x"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "認知負荷與鷹架：一次只處理一層新東西",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-learning-styles-evidence",
+    "kind": "concept",
+    "title": "學習風格分類的證據界線",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "core_concept": "偏好視覺或聽覺資源可以用來改善投入感，但目前不足以支持先把學生分類，再依標籤配對教學方式就一定學得更好。",
+    "deep_understanding": "依內容選表徵更實用：空間結構用圖、發音用聲音、流程用操作；每種方式都要用提取或應用確認學會。",
+    "solution_methods": "選最能表達內容的媒介，再補上一個不靠該媒介的回想測試。",
+    "examples": "看架構圖建立流程，再關圖自己畫一次並解釋箭頭關係。",
+    "common_mistakes": "說「我是視覺型」就只看圖，完全避開閱讀、聽力或實作。",
+    "sources": [
+      {
+        "reference": "Pashler et al. (2008), Learning Styles: Concepts and Evidence",
+        "url": "https://doi.org/10.1111/j.1539-6053.2009.01038.x"
+      },
+      {
+        "reference": "Dunlosky et al. (2013), Improving Students’ Learning With Effective Learning Techniques",
+        "url": "https://doi.org/10.1111/j.1539-6053.2013.01034.x"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "學習風格分類的證據界線",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-nlp-terms",
+    "kind": "concept",
+    "title": "NLP 兩種常見意思：自然語言處理 vs 神經語言程式學",
+    "category": "使用者提供教材｜AI 與學習科學｜08｜NLP 名詞辨析",
+    "core_concept": "AI 課程中的 NLP 通常指 Natural Language Processing（自然語言處理）；心理／溝通語境中的 NLP 常指 Neuro-Linguistic Programming（神經語言程式學）。兩者是不同領域。",
+    "deep_understanding": "神經語言程式學不能與 NLP AI 技術、認知心理學或有實證的學習策略混為一談。健康成效系統性回顧指出其證據數量與品質有限，未能支持明確健康效果；它不應被當作標準臨床治療或已證實的學習框架。",
+    "solution_methods": "閱讀資料時先展開英文全名、查研究設計與證據品質；遇到「NLP」標記領域，再判斷引用是否支持該主張。",
+    "examples": "NLP 的 Transformer、tokenizer 指自然語言處理；NLP 的眼球動作或溝通技巧說法多指神經語言程式學。",
+    "common_mistakes": "看到縮寫相同就把內容放在同一主題；把個人見證當成療效證據。",
+    "sources": [
+      {
+        "reference": "Sturt et al. (2012), Neurolinguistic programming: a systematic review of the effects on health outcomes",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/23211129/"
+      },
+      {
+        "reference": "Stanford CS224N: Natural Language Processing with Deep Learning",
+        "url": "https://web.stanford.edu/class/cs224n/"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "NLP 兩種常見意思：自然語言處理 vs 神經語言程式學",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。"
+    }
+  },
+  {
+    "id": "ai-path-recall-cycle",
+    "kind": "flashcard",
+    "title": "快速學習循環",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "sources": [
+      {
+        "reference": "Roediger & Karpicke (2006), Test-Enhanced Learning",
+        "url": "https://doi.org/10.1037/0033-2909.132.3.354"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "快速學習循環",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。",
+      "front": "學習一個概念時，先做什麼？",
+      "back": "先看題目或提示，閉卷回想 2–5 分鐘；再翻解釋核對；最後用另一個例子重述。若卡住，看最少提示後再嘗試。"
+    }
+  },
+  {
+    "id": "ai-path-ml-flow-card",
+    "kind": "flashcard",
+    "title": "快速學習循環",
+    "category": "使用者提供教材｜AI 與學習科學｜00｜總路徑",
+    "sources": [
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "快速學習循環",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。",
+      "front": "機器學習專案的基本流程是什麼？",
+      "back": "定義任務與錯誤成本 → 檢查資料及切分 → 建基準線 → 訓練與驗證 → 測試和錯誤分析 → 部署監控及迭代。"
+    }
+  },
+  {
+    "id": "ai-path-split-check-card",
+    "kind": "flashcard",
+    "title": "快速學習循環",
+    "category": "使用者提供教材｜AI 與學習科學｜00｜總路徑",
+    "sources": [
+      {
+        "reference": "Google Machine Learning Crash Course",
+        "url": "https://developers.google.com/machine-learning/crash-course"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "快速學習循環",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。",
+      "front": "怎麼快速查資料洩漏？",
+      "back": "問每個欄位在預測時是否已存在；檢查重複個體、未來資訊、標籤代理、前處理是否先看全資料，以及測試集是否被反覆用來調參。"
+    }
+  },
+  {
+    "id": "ai-path-rag-components-card",
+    "kind": "flashcard",
+    "title": "快速學習循環",
+    "category": "使用者提供教材｜AI 與學習科學｜00｜總路徑",
+    "sources": [
+      {
+        "reference": "Google Rules of Machine Learning: Best Practices for ML Engineering",
+        "url": "https://developers.google.com/machine-learning/guides/rules-of-ml"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "快速學習循環",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。",
+      "front": "RAG 最少要分哪兩段評估？",
+      "back": "檢索：正確證據有沒有進入 top-k？生成：答案是否被檢索內容支持、引用是否正確、未知時能否拒答？"
+    }
+  },
+  {
+    "id": "ai-path-weekly-review-card",
+    "kind": "flashcard",
+    "title": "快速學習循環",
+    "category": "使用者提供教材｜AI 與學習科學｜07｜心理學與學習科學",
+    "sources": [
+      {
+        "reference": "Roediger & Karpicke (2006), Test-Enhanced Learning",
+        "url": "https://doi.org/10.1037/0033-2909.132.3.354"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "快速學習循環",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。",
+      "front": "每週 AI 學習回顧問哪四題？",
+      "back": "這週我能不看資料說出什麼？哪種錯誤重複出現？下一週只做哪個最小實驗或練習？我需要哪個來源／回饋來校正？"
+    }
+  },
+  {
+    "id": "ai-path-nlp-name-card",
+    "kind": "flashcard",
+    "title": "NLP 名詞辨析",
+    "category": "使用者提供教材｜AI 與學習科學｜08｜NLP 名詞辨析",
+    "sources": [
+      {
+        "reference": "Sturt et al. (2012), Neurolinguistic programming: a systematic review of the effects on health outcomes",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/23211129/"
+      }
+    ],
+    "evidence_status": "cross_checked",
+    "metadata": {
+      "provider": "curated-ai-learning-path",
+      "reviewed_on": "2026-10-06",
+      "prerequisites": [],
+      "learning_action": "先回想，再翻卡核對；錯誤寫成下一次練習。"
+    },
+    "original_record": {
+      "learning_objective": "NLP 名詞辨析",
+      "practice_prompt": "先遮住答案，用自己的話說明；再拿一個新情境測試能否遷移。",
+      "front": "看見 NLP，先做哪件事？",
+      "back": "展開英文全名、確認領域與來源：Natural Language Processing 是自然語言處理；Neuro-Linguistic Programming 是不同的神經語言程式學。不要混為一談。"
+    }
+  }
+]

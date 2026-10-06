@@ -1,6 +1,6 @@
-import {createCloudClient} from './cloud.mjs?v=3.4';
-import {createAutosync} from './autosync.mjs?v=3.4';
-import {validateBackup,migrate,validateKnowledge} from './life.mjs?v=3.4';
+import {createCloudClient} from './cloud.mjs?v=3.5';
+import {createAutosync} from './autosync.mjs?v=3.5';
+import {validateBackup,migrate,validateKnowledge} from './life.mjs?v=3.5';
 
 export async function mountAccount(config,state,callbacks){
  const client=config.enabled?createCloudClient(config):null;
