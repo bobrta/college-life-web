@@ -1,6 +1,6 @@
 import {mountManagement} from './management-ui.mjs?v=3.5';
 import {readable,topicOf,studyCard,mergeKnowledge,nextReview,quizThemeOf} from './study.mjs?v=3.5';
-import {mountExperience} from './experience.mjs?v=3.6';
+import {mountExperience} from './experience.mjs?v=3.7';
 import {loadKnowledgeFile} from './knowledge-loader.mjs?v=3.6';
 import {latexToReadable} from './math-format.mjs?v=3.5';
 import {validateKnowledge,validDate} from './life.mjs?v=3.5';
