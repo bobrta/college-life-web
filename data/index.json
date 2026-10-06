@@ -1,1 +1,1 @@
-{"files": [], "unit_count": 0}
+{"schema_version": "2.0", "files": ["ipas-ai-community.json", "user-question-bank.json", "user-wisdom-question-bank.json", "course-questions.json"], "unit_count": 1370, "evidence_status": "unverified", "source_note": "包含 GitHub iPAS AI 社群題庫、使用者提供的 320 題、300 題與原有課程題目。各題保留來源與核對狀態。"}
