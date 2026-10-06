@@ -7,7 +7,7 @@ function btn(text,action,cls='secondary'){const b=n('button',text,cls);b.type='b
 const dateString=d=>d.toISOString().slice(0,10);
 export function mountExperience(api){
  const {getUnits,getCards,getState}=api;
- document.querySelector('.version').textContent='新版 3.7 · 2026.10.06';
+ document.querySelector('.version').textContent='新版 3.8 · 2026.10.06';
  const header=document.querySelector('main header');header.append(n('span','資料載入中','data-pill'));const pill=header.lastElementChild;
  const welcome=n('section',undefined,'setup-banner');welcome.hidden=true;welcome.append(n('div','先匯入知識資料包，就能開始搜尋、卡片與題庫。'),btn('匯入資料',()=>{api.go('settings');$('knowledge-file').click();},'primary'));document.querySelector('.heading').after(welcome);
  // Visible topic folders, with pagination rather than thousands of rows.

@@ -8,13 +8,17 @@ export const STUDY_STEPS = [
 ];
 
 export function buildCoachPrompt({mode='課程／考試',subject='',topic='',goal='',diagnosis='',question='',material='',knowledge=[]}={}){
-  const source = material.trim() || knowledge.map((u,i)=>[
+  const parts=[];
+  if(material.trim())parts.push('課程材料／自行提供文字：\n'+material.trim());
+  const selectedKnowledge=knowledge.map((u,i)=>[
     `知識單元 ${i+1}：${u.title||'未命名'}`,
     `概念：${u.core_concept||''}`,
     `進一步理解：${u.deep_understanding||''}`,
     `方法／公式：${u.solution_methods||''}`,
     `來源：${(u.sources||[]).map(s=>s.file||s.reference||'').filter(Boolean).join('、')||'未提供'}`
-  ].join('\n')).join('\n\n');
+  ].join('\n'));
+  if(selectedKnowledge.length)parts.push('已選知識庫卡片：\n'+selectedKnowledge.join('\n\n'));
+  const source=parts.join('\n\n');
   const focus=mode==='自然語言處理（NLP）'
     ? '\n\nNLP 專項：先從材料找出任務目標與輸入／輸出；再抽取術語定義、實體（若材料有）、概念關係、流程與評估方式。用表格標出每項資訊的材料依據，區分材料明說與推論。請我說明資料→表示／特徵→模型或規則→輸出→評估的流程；教材沒涵蓋的環節標為待查，不把通用流程說成該課唯一方法。最後讓我比較兩種可能作法並解釋取捨。'
     : mode==='課程／考試'
