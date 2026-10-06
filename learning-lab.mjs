@@ -1,5 +1,5 @@
-import {buildCoachPrompt,makeLearningRecord,STUDY_STEPS} from './learning-method.mjs?v=4.0';
-import {buildTopicGroups} from './learning-topics.mjs?v=4.0';
+import {buildCoachPrompt,makeLearningRecord,STUDY_STEPS,STUDY_SOPS} from './learning-method.mjs?v=4.1';
+import {buildTopicGroups} from './learning-topics.mjs?v=4.1';
 import {readable,topicOf} from './study.mjs?v=3.5';
 
 const $=id=>document.getElementById(id);
@@ -16,18 +16,18 @@ export function mountLearningLab({state,save,getUnits,go}){
   const page=el('section');page.id='learning-lab';page.className='page learning-lab';page.hidden=true;
   page.innerHTML=`
     <div class="panel learning-intro">
-      <p class="eyebrow">COLLEGE OS · 學習流程 4.0</p>
+      <p class="eyebrow">COLLEGE OS · 學習流程 4.1</p>
       <h2>每次只攻下一個考點。</h2>
-      <p>課程先照老師範圍、投影片、例題和指定題庫走。先自己回想，再補缺口、做題、隔天回測；額外難題等基本要求穩了再加。</p>
-      <div class="learning-pills"><span>老師範圍優先</span><span>先答再看</span><span>錯因要修正</span><span>隔天再測</span></div>
-      <div class="learning-flow" aria-label="一次學習的流程"><strong>選章節</strong><i>›</i><strong>閉卷診斷</strong><i>›</i><strong>補一個缺口</strong><i>›</i><strong>做題回測</strong></div>
+      <p id="learning-intro-copy">課程先照老師範圍、投影片、例題和指定題庫走。先自己回想，再補缺口、做題、隔天回測。</p>
+      <div id="learning-pills" class="learning-pills"><span>老師範圍優先</span><span>先答再看</span><span>錯因要修正</span><span>隔天再測</span></div>
+      <div id="learning-flow" class="learning-flow" aria-label="一次學習的流程"></div>
     </div>
 
     <div class="panel learning-setup">
       <div class="section-heading"><div><p class="eyebrow">01 · 先框定範圍</p><h2>選科目、分類、章節</h2></div><span id="learning-knowledge-count" class="tag"></span></div>
       <p class="learning-help">主題不用打字搜尋：先選上層分類，再從第二個選單選單元。若是你自己的課程，選「我的課程」並貼老師材料即可。</p>
       <div class="form-grid learning-select-grid">
-        <label>學習路徑<select id="learning-mode"><option value="課程／考試">課程／考試（預設）</option><option value="知識庫／概念理解">知識庫／概念理解</option><option value="自然語言處理（NLP）">自然語言處理（NLP）</option></select></label>
+        <div class="learning-mode-panel"><span class="learning-field-label">選擇這次要用的學習介面</span><div id="learning-mode-tabs" class="learning-mode-tabs" role="tablist" aria-label="學習 SOP 介面"><button type="button" role="tab" aria-selected="true" data-learning-mode="課程／考試">課程／考試</button><button type="button" role="tab" aria-selected="false" data-learning-mode="AI 教練學習">AI 教練</button><button type="button" role="tab" aria-selected="false" data-learning-mode="NLP 專題">NLP 專題</button><button type="button" role="tab" aria-selected="false" data-learning-mode="知識庫／概念卡">知識概念卡</button></div><p id="learning-mode-description" role="status"></p><select id="learning-mode" hidden aria-hidden="true"><option>課程／考試</option><option>AI 教練學習</option><option>NLP 專題</option><option>知識庫／概念卡</option></select></div>
         <label>課程／科目<input id="learning-subject" maxlength="100" placeholder="例如：管理學、微積分、工業工程概論"></label>
         <label>① 主題分類<select id="learning-group"><option value="">選擇主題分類</option><option value="__course__">我的課程（貼上老師材料）</option></select></label>
         <label>② 單元／章節<select id="learning-topic" disabled><option value="">先選左側主題分類</option></select></label>
@@ -46,8 +46,8 @@ export function mountLearningLab({state,save,getUnits,go}){
     </div>
 
     <div class="panel learning-sop-panel">
-      <div class="section-heading"><div><p class="eyebrow">02 · 做完一輪，而不是一直重讀</p><h2>本次學習 SOP</h2></div><span id="learning-step-progress" class="tag">0 / 6 步</span></div>
-      <div class="learning-sop-callout"><strong>先別打開 AI。</strong><span>第一步先靠自己寫，這樣才知道是真懂，還是只覺得眼熟。</span></div>
+      <div class="section-heading"><div><p class="eyebrow">02 · 做完一輪，而不是一直重讀</p><h2 id="learning-sop-title">課程與考試 SOP</h2></div><span id="learning-step-progress" class="tag">0 / 6 步</span></div>
+      <div class="learning-sop-callout"><strong id="learning-sop-lead">先自己想</strong><span id="learning-sop-description">先闔上資料，自己試著回想。</span></div>
       <div id="learning-steps" class="learning-steps"></div>
       <div class="learning-grid">
         <label>① 閉卷診斷｜我目前會什麼？<textarea id="learning-diagnosis" rows="4" maxlength="2500" placeholder="闔上教材，用 1–3 句寫：這個概念是什麼？我記得哪些步驟？哪一點最不確定？"></textarea></label>
@@ -127,17 +127,44 @@ export function mountLearningLab({state,save,getUnits,go}){
   const tomorrow=new Date(Date.now()+86400000).toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'});
   $('learning-review-date').value=tomorrow;
 
-  const steps=$('learning-steps');
-  STUDY_STEPS.forEach(item=>{
-    const row=el('label',undefined,'learning-step');
-    const check=el('input');check.type='checkbox';check.dataset.step=item.id;check.onchange=updateStepCount;
-    const description=el('span',undefined,'learning-step-copy');
-    description.append(el('strong',item.title),el('small',item.minutes+' · '+item.why),el('span',item.action));
-    row.append(check,description);steps.append(row);
-  });
+  const steps=$('learning-steps');let activeSteps=STUDY_STEPS,activeMode=null;const stepProgress={};
   function updateStepCount(){
-    $('learning-step-progress').textContent=`${steps.querySelectorAll('input:checked').length} / 6 步已完成`;
+    $('learning-step-progress').textContent=`${steps.querySelectorAll('input:checked').length} / ${activeSteps.length} 步已完成`;
   }
+  function renderMode(mode='課程／考試'){
+    if(activeMode)stepProgress[activeMode]=[...steps.querySelectorAll('input')].map(check=>check.checked);
+    const workflow=STUDY_SOPS[mode]||STUDY_SOPS['課程／考試'];
+    const modeCopy={
+      '課程／考試':{intro:'先照老師範圍、投影片、例題和指定題庫走。先自己回想，再補缺口、做題、隔天回測。',tags:['老師範圍優先','先答再看','錯因要修正','隔天再測'],flow:['選章節','閉卷診斷','補一個缺口','做題回測']},
+      'AI 教練學習':{intro:'先試著自己回答，再請 AI 追問和給提示。關掉 AI 後能獨立重建，才算真的學會。',tags:['自己先答','AI 一次追問一題','提示後自己修正','關掉 AI 再測'],flow:['自己先試','AI 診斷','用提示修正','獨立重做']},
+      'NLP 專題':{intro:'用 NLP 的資料處理流程讀懂專題，從任務和輸入輸出一路連到方法、評估與錯誤案例。',tags:['任務定義','輸入與輸出','表示與模型','評估與錯例'],flow:['定義任務','整理資料','拆解方法','評估結果']},
+      '知識庫／概念卡':{intro:'從卡片問題開始閉卷回想，再連起原因、先備概念、例子與應用情境。',tags:['閉卷提取','白話定義','連結概念','例子與遷移'],flow:['抽一張卡','自己解釋','建立關聯','新情境應用']}
+    }[mode]||{};
+    $('learning-intro-copy').textContent=modeCopy.intro;
+    $('learning-pills').replaceChildren(...modeCopy.tags.map(tag=>el('span',tag)));
+    const flow=$('learning-flow');flow.replaceChildren();modeCopy.flow.forEach((label,index)=>{if(index)flow.append(el('i','›'));flow.append(el('strong',label));});
+    $('learning-mode').value=mode;activeSteps=workflow.steps;
+    document.querySelectorAll('[data-learning-mode]').forEach(button=>{const active=button.dataset.learningMode===mode;button.setAttribute('aria-selected',String(active));button.classList.toggle('active',active);});
+    $('learning-mode-description').textContent=workflow.description;
+    $('learning-sop-title').textContent=workflow.title;
+    $('learning-sop-lead').textContent=mode==='AI 教練學習'?'AI 是追問教練，不是代答器':mode==='NLP 專題'?'沿著處理流程拆解':mode==='知識庫／概念卡'?'從回想開始建立連結':'老師範圍優先';
+    $('learning-sop-description').textContent=workflow.first;
+    $('learning-goal').placeholder=workflow.goal;
+    $('learning-diagnosis').placeholder=workflow.diagnosis;
+    $('learning-gap').placeholder=workflow.gap;
+    $('learning-reflection').placeholder=workflow.reflection;
+    steps.replaceChildren();workflow.steps.forEach(item=>{
+      const row=el('label',undefined,'learning-step');
+      const check=el('input');check.type='checkbox';check.dataset.step=item.id;check.onchange=updateStepCount;
+      const description=el('span',undefined,'learning-step-copy');
+      description.append(el('strong',item.title),el('small',item.minutes+' · '+item.why),el('span',item.action));
+      row.append(check,description);steps.append(row);
+    });
+    (stepProgress[mode]||[]).forEach((checked,index)=>{const input=steps.querySelectorAll('input')[index];if(input)input.checked=checked;});
+    activeMode=mode;updateStepCount();
+  }
+  document.querySelectorAll('[data-learning-mode]').forEach(button=>button.onclick=()=>renderMode(button.dataset.learningMode));
+  renderMode();
   $('learning-start').onclick=()=>{
     if(!$('learning-subject').value.trim()&&!topicSelect.value&&$('learning-group').value!=='__course__'){
       $('learning-start-status').textContent='先選主題分類和單元，或選「我的課程」並填課程名稱。';$('learning-group').focus();return;
@@ -145,8 +172,8 @@ export function mountLearningLab({state,save,getUnits,go}){
     if($('learning-group').value==='__course__'&&!$('learning-subject').value.trim()){
       $('learning-start-status').textContent='先填課程／科目名稱，例如：管理學。';$('learning-subject').focus();return;
     }
-    const first=steps.querySelector('[data-step="diagnose"]');first.checked=true;updateStepCount();
-    $('learning-start-status').textContent='先闔上教材，花 2 分鐘寫下你記得的內容，再往下做。';
+    const first=steps.querySelector('input');if(first){first.checked=true;updateStepCount();}
+    $('learning-start-status').textContent=activeSteps[0]?`先照「${activeSteps[0].title.replace(/^\d+｜/,'')}」開始（${activeSteps[0].minutes}），再往下做。`:'從第一步開始。';
     $('learning-diagnosis').focus();$('learning-diagnosis').scrollIntoView({behavior:'smooth',block:'center'});
   };
   $('learning-build-prompt').onclick=()=>{
