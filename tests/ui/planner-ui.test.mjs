@@ -78,12 +78,21 @@ async function loadUI(caseId) {
       return !!x && (x.type !== "checkbox" || x.checked);
     }
   };
-  await import(
-    pathToFileURL(resolve(root, "planner-ui.mjs")) + "?qa=" + caseId
-  );
+  if (process.env.PLANNER_UI_STANDALONE) {
+    const html = fs.readFileSync(resolve(root, "時間規劃_單檔版.html"), "utf8");
+    const script = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1];
+    await import(
+      "data:text/javascript;base64," +
+        Buffer.from(script + "\n//case=" + caseId).toString("base64")
+    );
+  } else {
+    await import(
+      pathToFileURL(resolve(root, "planner-ui.mjs")) + "?qa=" + caseId
+    );
+  }
   const $ = (id) => document.getElementById(id),
     submit = (id) => $(id).onsubmit({ preventDefault() {}, target: $(id) }),
-    read = () => JSON.parse(data.get(key));
+    read = () => JSON.parse(data.get(key) || "null");
   function add(title = "工作") {
     const f = $("task-form").elements;
     Object.assign(f.title, { value: title });
@@ -106,14 +115,12 @@ test("P44 匯入備份不可靜默丟失進行中計時", async () => {
   ui.$("start").onclick();
   const snapshot = ui.read();
   ui.$("restore").value = "file";
-  await ui
-    .$("restore")
-    .onchange({
-      target: {
-        files: [{ size: 100, text: async () => JSON.stringify(snapshot) }],
-        value: "file",
-      },
-    });
+  await ui.$("restore").onchange({
+    target: {
+      files: [{ size: 100, text: async () => JSON.stringify(snapshot) }],
+      value: "file",
+    },
+  });
   assert.equal(ui.read().timer?.mode, "focus");
 });
 test("P45 零剩餘工時可進入編輯表單", async () => {
@@ -164,4 +171,176 @@ test("P50 操作成功後不可繼續顯示舊錯誤", async () => {
   assert.ok(ui.$("status").textContent);
   ui.add();
   assert.equal(ui.$("status").textContent, "");
+});
+
+test("同頁導航保留其他區域與輸入草稿", async () => {
+  const ui = await loadUI("hub1");
+  ui.$("money-form").elements.note.value = "未保存";
+  document.querySelector('[data-tab="tasks"]').onclick();
+  for (const id of [
+    "overview",
+    "tasks",
+    "settings",
+    "tools",
+    "goals",
+    "finance-hub",
+    "decision-hub",
+    "health-hub",
+  ])
+    assert.equal(ui.$(id).hidden, false);
+  assert.equal(ui.$("money-form").elements.note.value, "未保存");
+});
+function command(ui, text) {
+  ui.$("hub-command").value = text;
+  ui.$("command-preview").onclick();
+  ui.$("command-apply").onclick();
+}
+test("行程加費用指令原子保存兩筆關聯資料", async () => {
+  const ui = await loadUI("hub2");
+  command(ui, "/cal 2026-10-15 14:00-15:00 [報告] $150");
+  const s = ui.read();
+  assert.equal(s.events.length, 1);
+  assert.equal(s.hub.transactions.length, 1);
+  assert.equal(s.hub.transactions[0].eventId, s.events[0].id);
+  assert.equal(s.hub.transactions[0].status, "planned");
+});
+test("不合法行程不留下費用或事件", async () => {
+  const ui = await loadUI("hub3");
+  command(ui, "/cal 2026-10-15 23:00-22:00 [錯誤] $150");
+  assert.ok(ui.$("hub-status").textContent);
+  assert.equal(ui.read(), null);
+});
+test("指令修改後必須重新預覽", async () => {
+  const ui = await loadUI("hub4");
+  ui.$("hub-command").value = "/fin -150 #餐費";
+  ui.$("command-preview").onclick();
+  ui.$("hub-command").value = "/fin -200 #餐費";
+  ui.$("hub-command").oninput();
+  ui.$("command-apply").onclick();
+  assert.equal(ui.read(), null);
+  assert.ok(ui.$("hub-status").textContent);
+});
+test("第四件進行中事项保存失敗保留前三件", async () => {
+  const ui = await loadUI("hub5");
+  for (let i = 0; i < 4; i++) command(ui, `/task [事項${i}] 1h -> doing`);
+  assert.equal(ui.read().hub.decisions.length, 3);
+  assert.equal(ui.read().tasks.length, 3);
+  assert.match(ui.$("hub-status").textContent, /上限/);
+});
+test("想做事項可原地開始並確認完成", async () => {
+  const ui = await loadUI("hub6");
+  command(ui, "/task [報告] 2h -> want");
+  assert.equal(ui.read().tasks[0].active, false);
+  const find = (label) =>
+    [...ui.$("decision-list").querySelectorAll("button")].find(
+      (b) => b.textContent === label,
+    );
+  find("開始推進").onclick();
+  assert.equal(ui.read().tasks[0].active, true);
+  find("確認完成").onclick();
+  assert.equal(ui.read().tasks[0].done, true);
+  assert.equal(ui.read().hub.decisions[0].pool, "done");
+});
+test("預定轉實際保留一筆記帳", async () => {
+  const ui = await loadUI("hub7");
+  command(ui, "/fin -150 #餐費 !預定");
+  const b = [...ui.$("money-list").querySelectorAll("button")].find(
+    (b) => b.textContent === "今天已收／付",
+  );
+  b.onclick();
+  assert.equal(ui.read().hub.transactions.length, 1);
+  assert.equal(ui.read().hub.transactions[0].status, "actual");
+});
+test("四區圖表可切換而不清除未保存表單", async () => {
+  const ui = await loadUI("hub8");
+  command(ui, "/task [報告] 2h -> want");
+  command(ui, "/fin -150 #餐費");
+  command(ui, "/fit 20m #walk [散步]");
+  ui.$("money-form").elements.note.value = "草稿";
+  for (const id of [
+    "time-chart-kind",
+    "money-chart-kind",
+    "decision-chart-kind",
+    "health-chart-kind",
+  ])
+    for (const value of ["bars", "donut", "line", "table"]) {
+      ui.$(id).value = value;
+      ui.$(id).onchange();
+    }
+  assert.equal(ui.$("money-form").elements.note.value, "草稿");
+  assert.equal(ui.$("hub-status").textContent, "");
+});
+test("年範圍可操作且表單預算依範圍保存", async () => {
+  const ui = await loadUI("hub9");
+  ui.$("period").value = "year";
+  ui.$("period").onchange();
+  assert.match(ui.$("range").textContent, /01-01.*12-31/);
+  const f = ui.$("money-settings").elements;
+  f.opening.value = "1000";
+  f.reserve.value = "100";
+  f.budget.value = "200";
+  ui.submit("money-settings");
+  assert.ok(
+    Object.keys(ui.read().hub.budgets).some(
+      (k) => k.includes("01-01") && k.includes("12-31"),
+    ),
+  );
+});
+test("生活紀錄匯入保留財務與健康", async () => {
+  const ui = await loadUI("hub10");
+  command(ui, "/fin -150 #餐費");
+  command(ui, "/fit 20m #walk");
+  const saved = ui.read();
+  await ui.$("restore").onchange({
+    target: {
+      files: [{ size: 100, text: async () => JSON.stringify(saved) }],
+      value: "file",
+    },
+  });
+  assert.equal(ui.read().hub.transactions[0].cents, 15000);
+  assert.equal(ui.read().hub.health[0].minutes, 20);
+});
+test("日曆匯出包含固定行程，快照分開選擇", async () => {
+  const ui = await loadUI("hub11");
+  command(ui, "/cal 2026-10-15 14:00-15:00 [固定行程]");
+  ui.$("anchor").value = "2026-10-15";
+  ui.$("period").value = "week";
+  ui.$("period").onchange();
+  let blob;
+  const original = URL.createObjectURL;
+  try {
+    URL.createObjectURL = (b) => ((blob = b), "blob:qa");
+    ui.$("export-ics").onclick();
+    assert.ok(blob);
+    const text = await blob.text();
+    assert.match(text, /SUMMARY:固定行程/);
+    assert.match(text, /20261015T140000/);
+    ui.$("export-plan-source").value = "confirmed";
+    ui.$("export-ics").onclick();
+    assert.match(ui.$("status").textContent, /快照/);
+  } finally {
+    URL.createObjectURL = original;
+  }
+});
+test("列印結束後恢復原本收合狀態", async () => {
+  const ui = await loadUI("hub12");
+  const details = [...document.querySelectorAll("details")];
+  details[0].open = false;
+  window.print = () => window.dispatchEvent(new window.Event("afterprint"));
+  ui.$("print").onclick();
+  assert.equal(details[0].open, false);
+});
+test("未來活動紀錄不冒充實際完成", async () => {
+  const ui = await loadUI("hub13");
+  command(ui, "/fit 2099-10-15 20m #walk");
+  assert.equal(ui.read(), null);
+  assert.match(ui.$("hub-status").textContent, /已發生/);
+});
+test("資源與財務設定草稿不被重算清掉", async () => {
+  const ui = await loadUI("hub14");
+  ui.$("resource-form").elements.resources.value = "兩本微積分";
+  ui.$("money-settings").elements.opening.value = "1234";
+  ui.$("replan").onclick();
+  assert.equal(ui.$("resource-form").elements.resources.value, "兩本微積分");
+  assert.equal(ui.$("money-settings").elements.opening.value, "1234");
 });

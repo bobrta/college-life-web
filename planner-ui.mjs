@@ -1,3 +1,4 @@
+import { mountLifestyle } from "./規劃介面/lifestyle.mjs";
 import {
   plan,
   range,
@@ -6,7 +7,7 @@ import {
   validate,
   parseWindows,
 } from "./planner-core.mjs";
-import { parseSchedule, toICS } from "./calendar.mjs";
+import { parseSchedule, toICS, eventsOn } from "./calendar.mjs";
 import { createPlannerStore } from "./規劃核心/store.mjs";
 import { beginFocus, finishFocus, advanceTimer } from "./規劃核心/timer.mjs";
 import { renderSchedule } from "./規劃介面/schedule.mjs";
@@ -20,6 +21,7 @@ let editing = null,
 let state = store.read();
 if (store.error) $("status").textContent = "原資料未覆寫：" + store.error;
 let planCache = null;
+let lifestyleView = null;
 function nowCutoff() {
   const d = new Date();
   return {
@@ -99,15 +101,10 @@ if (initial.getUTCDay() === 0) initial.setUTCDate(initial.getUTCDate() + 1);
 $("anchor").value = initial.toISOString().slice(0, 10);
 document.querySelector("[name=date]").value = today;
 for (const b of document.querySelectorAll("[data-tab]"))
-  b.onclick = () => {
-    for (const s of ["overview", "tasks", "settings", "tools", "goals"])
-      $(s).hidden = s !== b.dataset.tab;
-    for (const n of document.querySelectorAll("[data-tab]")) {
-      n.classList.toggle("active", n === b);
-      n.setAttribute("aria-pressed", String(n === b));
-    }
-  };
+  b.onclick = () =>
+    $(b.dataset.tab).scrollIntoView?.({ behavior: "smooth", block: "start" });
 function render() {
+  lifestyleView?.render();
   const confirmed = state.confirmed;
   $("confirmed-note").textContent = confirmed
     ? `確認於 ${confirmed.at}。${confirmed.revision === revision ? "設定與任務未變更。" : "資料已變更，請重新檢查建議排程；原確認紀錄保留。"}`
@@ -207,8 +204,9 @@ function render() {
           "outcome",
           "depends",
           "goal",
+          "category",
         ])
-          f.elements[k].value = t[k] || "";
+          f.elements[k].value = t[k] || (k === "category" ? "study" : "");
         f.elements.hours.value = t.remaining / 60;
         f.elements.active.checked = t.active;
         $("task-submit").textContent = "保存修改";
@@ -278,6 +276,7 @@ $("task-form").onsubmit = safe((e) => {
     outcome: f.get("outcome"),
     goal: f.get("goal"),
     depends: f.get("depends"),
+    category: f.get("category") || "study",
     active: f.has("active"),
     done: editing ? state.tasks.find((t) => t.id === editing).done : false,
   };
@@ -370,11 +369,30 @@ $("event-form").onsubmit = safe((e) => {
 for (const id of ["period", "anchor"]) $(id).onchange = safe(render);
 $("replan").onclick = safe(render);
 $("print").onclick = () => {
-  for (const d of document.querySelectorAll("details")) {
-    d.open = true;
-    d.dispatchEvent(new Event("toggle"));
+  document.body.classList.toggle(
+    "print-schedule",
+    $("print-scope").value === "schedule",
+  );
+  const snapshot = [...document.querySelectorAll("details")].map((d) => [
+    d,
+    d.open,
+  ]);
+  const cleanup = () => {
+    document.body.classList.remove("print-schedule");
+    for (const [d, open] of snapshot) d.open = open;
+    window.removeEventListener?.("afterprint", cleanup);
+  };
+  window.addEventListener?.("afterprint", cleanup, { once: true });
+  try {
+    for (const [d] of snapshot) {
+      d.open = true;
+      d.dispatchEvent(new Event("toggle"));
+    }
+    window.print();
+  } catch (error) {
+    cleanup();
+    $("status").textContent = error.message;
   }
-  window.print();
 };
 $("backup").onclick = safe(() => {
   const blob = new Blob([JSON.stringify(state, null, 2)], {
@@ -613,9 +631,13 @@ function download(content, name, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 $("export-ics").onclick = safe(() => {
-  const p = currentPlan(),
-    blocks = p.days.flatMap((d) => d.blocks);
-  if (!blocks.length) throw Error("尚無可匯出的工作區段");
+  const dates = range($("anchor").value || today, $("period").value),
+    blocks =
+      $("export-plan-source").value === "confirmed"
+        ? (state.confirmed?.blocks || []).filter((b) => dates.includes(b.date))
+        : currentPlan().days.flatMap((d) => d.blocks);
+  if ($("export-plan-source").value === "confirmed" && !state.confirmed)
+    throw Error("尚無確認快照");
   const events = blocks.map((b) => ({
     id: `planner-${b.id}-${b.date}-${b.start}`,
     title: b.title,
@@ -625,12 +647,21 @@ $("export-ics").onclick = safe(() => {
     notes: state.tasks.find((t) => t.id === b.id)?.outcome || "",
     source: "College OS 時間規劃",
   }));
+  if ($("export-fixed").checked)
+    for (const date of dates)
+      for (const event of eventsOn(state.events, date))
+        events.push({ ...event, date });
+  if (!events.length) throw Error("所選範圍沒有可匯出行程");
   download(
-    toICS(events),
+    toICS(
+      events.map(
+        ({ weekday, from, until, excludedDates, overrides, ...event }) => event,
+      ),
+    ),
     "時間規劃-" + $("anchor").value + ".ics",
     "text/calendar",
   );
-  $("status").textContent = "已匯出目前建議。ICS 是單次匯入，不會持續同步。";
+  $("status").textContent = "已匯出所選版本。ICS 是單次匯入，不會持續同步。";
 });
 
 $("undo").onclick = safe(() => {
@@ -673,3 +704,14 @@ function syncSettings() {
   for (const k of ["limit", "buffer", "focus", "rest", "minBlock"])
     document.querySelector(`[name=${k}]`).value = state.settings[k];
 }
+
+lifestyleView = mountLifestyle({
+  getState: () => state,
+  commit: (next) => {
+    state = store.commit(next);
+    revision = state.revision;
+    render();
+  },
+  getPlan: currentPlan,
+  getDates: () => range($("anchor").value || today, $("period").value),
+});

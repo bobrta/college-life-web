@@ -40,3 +40,7 @@ node scripts/build-planner.mjs
 ### 50項問題修復
 
 詳見 [修復紀錄](docs/50項問題修復紀錄.md)。核心測試：`node --test tests/*.test.mjs`；操作測試：先 `npm install --prefix tests/ui`，再 `npm test --prefix tests/ui`。操作測試為DOM模擬，非實際瀏覽器驗證。
+
+### 同頁生活工作台
+
+已加入週月季年、指令預覽、台幣記帳及預定收支、資源決策、活動恢復與可切換圖表。詳見 [使用說明](docs/生活工作台使用說明.md)。PDF使用瀏覽器列印另存；Google日曆使用ICS匯入。

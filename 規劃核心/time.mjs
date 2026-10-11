@@ -12,7 +12,7 @@ export function clock(n) {
 export function range(anchor, period) {
   if (
     !validPlannerDate(anchor) ||
-    !["week", "month", "quarter"].includes(period)
+    !["week", "month", "quarter", "year"].includes(period)
   )
     throw Error("規劃日期或週期不正確");
   const d = new Date(anchor + "T12:00:00Z");
@@ -20,9 +20,14 @@ export function range(anchor, period) {
     d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
   else d.setUTCDate(1);
   if (period === "quarter") d.setUTCMonth(Math.floor(d.getUTCMonth() / 3) * 3);
+  if (period === "year") d.setUTCMonth(0);
   const end = new Date(d);
   if (period === "week") end.setUTCDate(end.getUTCDate() + 7);
-  else end.setUTCMonth(end.getUTCMonth() + (period === "quarter" ? 3 : 1));
+  else
+    end.setUTCMonth(
+      end.getUTCMonth() +
+        (period === "year" ? 12 : period === "quarter" ? 3 : 1),
+    );
   const out = [];
   for (; d < end; d.setUTCDate(d.getUTCDate() + 1))
     out.push(d.toISOString().slice(0, 10));

@@ -251,3 +251,206 @@ small {
     font-size: 16px;
   }
 }
+
+textarea {
+  width: 100%;
+  font: inherit;
+  padding: 12px;
+  border: 1px solid #cad8cc;
+  border-radius: 8px;
+  resize: vertical;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+section {
+  scroll-margin-top: 20px;
+}
+.wide {
+  grid-column: 1/-1;
+}
+.hub-chart {
+  margin-top: 20px;
+}
+.hub-chart svg {
+  width: 100%;
+  max-height: 220px;
+}
+.hub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.hub-table th,
+.hub-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #dce4da;
+}
+.hub-chart-row {
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.hub-track {
+  grid-column: 1/-1;
+  background: #edf1eb;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.hub-track span {
+  display: block;
+  height: 100%;
+}
+.hub-donut {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  margin: 20px auto;
+  position: relative;
+}
+.hub-donut:after {
+  content: "";
+  position: absolute;
+  inset: 35px;
+  border-radius: 50%;
+  background: white;
+}
+.hub-heat {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+.hub-record {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf1eb;
+}
+.hub-record span {
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.hub-record button {
+  padding: 6px 10px;
+}
+.hub-pools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.hub-pool {
+  background: #f6f8f4;
+  padding: 12px;
+  border-radius: 12px;
+}
+.hub-pool h3 {
+  margin-top: 0;
+}
+form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#hub-status {
+  color: #a14b42;
+}
+button[data-tab].active {
+  background: #e5eee5;
+  color: #244c3c;
+}
+@media (max-width: 650px) {
+  header {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  header span {
+    display: none;
+  }
+  .hub-pools {
+    grid-template-columns: 1fr;
+  }
+  main {
+    padding: 24px 14px;
+  }
+  .panel {
+    padding: 18px;
+  }
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media print {
+  form,
+  textarea,
+  #hub-capture,
+  #hub-status,
+  nav,
+  .toolbar {
+    display: none !important;
+  }
+  .hub-donut,
+  .hub-track span,
+  .hub-chart-row {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  details > summary {
+    display: none;
+  }
+  section[hidden] {
+    display: block;
+  }
+  .hub-table thead {
+    display: table-header-group;
+  }
+  .hub-record,
+  .hub-chart {
+    break-inside: avoid;
+  }
+  #schedule .panel,
+  .hub-pool {
+    break-inside: auto;
+  }
+}
+
+.hub-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.hub-bento > .panel {
+  min-width: 0;
+}
+#health-hub {
+  grid-column: 1/-1;
+}
+.hub-bento .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 1000px) {
+  .hub-bento {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  .hub-bento {
+    display: block;
+  }
+}
+
+@media print {
+  body.print-schedule main > section:not(#overview),
+  body.print-schedule .hub-bento,
+  body.print-schedule main > details {
+    display: none !important;
+  }
+}

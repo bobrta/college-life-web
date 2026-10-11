@@ -1,3 +1,4 @@
+import { validateHub } from "./lifestyle.mjs";
 export function validPlannerDate(value) {
   return (
     typeof value === "string" &&
@@ -91,6 +92,8 @@ export function validate(s) {
       !text(t.title, 200) ||
       !num(t.remaining, 0, 100000) ||
       !int(t.priority, 1, 3) ||
+      (t.category !== undefined &&
+        !["study", "work", "exercise", "personal"].includes(t.category)) ||
       (t.deadline !== undefined && t.deadline !== "" && !date(t.deadline)) ||
       typeof t.active !== "boolean" ||
       typeof t.done !== "boolean" ||
@@ -233,5 +236,6 @@ export function validate(s) {
     )
       throw Error("排程快照不正確");
   }
+  if (s.hub !== undefined) validateHub(s.hub);
   return s;
 }

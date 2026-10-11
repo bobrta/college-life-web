@@ -193,7 +193,7 @@ for (const [id, label, mutate] of malformed)
 test("P31 非法規劃日期不可默默返回空清單", () =>
   assert.throws(() => range("not-a-date", "week")));
 test("P32 非法週期不可默默算成月份", () =>
-  assert.throws(() => range("2026-10-12", "year")));
+  assert.throws(() => range("2026-10-12", "fortnight")));
 test("P33 非法時間字串不可變成可用分鐘", () =>
   assert.throws(() => minutes("99:99")));
 test("P34 小數分鐘不可轉成非法時刻", () => assert.throws(() => clock(480.5)));
