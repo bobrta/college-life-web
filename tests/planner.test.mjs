@@ -1,0 +1,12 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {subtract,pert,range,plan,validate} from '../planner-core.mjs';
+const base=()=>({version:1,settings:{limit:2,buffer:20,focus:50,rest:10,minBlock:20},days:Array.from({length:7},()=>({start:'18:00',end:'22:00',hours:4})),events:[],tasks:[]});
+const task=(id,remaining,extra={})=>({id,title:id,remaining,priority:2,active:true,done:false,deadline:'',...extra});
+test('重疊事件只扣一次',()=>assert.deepEqual(subtract(0,120,[[10,40],[20,60]]),[[0,10],[60,120]]));
+test('PERT validates ordering',()=>{assert.equal(pert(1,2,3),2);assert.throws(()=>pert(3,2,1));});
+test('月季跨年與閏年',()=>{assert.equal(range('2028-02-20','month').length,29);assert.equal(range('2026-12-31','quarter').at(-1),'2026-12-31');});
+test('時間與件數限制且區段不重疊',()=>{const s=base();s.tasks=[task('a',60),task('b',60),task('c',60)];const p=plan(s,['2026-10-12']);assert.equal(p.days[0].ids.size,2);assert.equal(p.unplaced[0].id,'c');assert.ok(p.scheduled<=p.capacity);const b=p.days[0].blocks.sort((a,b)=>a.start-b.start);for(let i=1;i<b.length;i++)assert.ok(b[i].start>=b[i-1].end);});
+test('休息與緩衝納入容量',()=>assert.equal(plan(base(),['2026-10-12']).capacity,160));
+test('固定保護事件不能被占用',()=>{const s=base();s.events=[{id:'rest',title:'休息',date:'2026-10-12',start:'19:00',end:'20:00'}];s.tasks=[task('a',200)];const p=plan(s,['2026-10-12']);for(const b of p.days[0].blocks)assert.ok(b.end<=1140||b.start>=1200);});
+test('過期限不排，依賴未完成不排',()=>{const s=base();s.tasks=[task('a',300,{deadline:'2026-10-11'}),task('b',30,{depends:'a'})];assert.equal(plan(s,['2026-10-12']).scheduled,0);});
+test('前置工作先完成',()=>{const s=base();s.tasks=[task('b',30,{depends:'a',priority:3}),task('a',30)];const p=plan(s,['2026-10-12']);const a=p.days[0].blocks.find(x=>x.id==='a'),b=p.days[0].blocks.find(x=>x.id==='b');assert.ok(b.start>=a.end);});
+test('備份拒絕循環依賴和非法時間',()=>{const s=base();s.tasks=[task('a',30,{depends:'b'}),task('b',30,{depends:'a'})];assert.throws(()=>validate(s));const x=base();x.days[0].end='99:00';assert.throws(()=>validate(x));});
