@@ -70,6 +70,7 @@ function save(options) {
 function safe(fn) {
   return (...args) => {
     try {
+      $("status").textContent = "";
       fn(...args);
     } catch (e) {
       state = store.read();
@@ -151,11 +152,15 @@ function render() {
           : "先加入工作與確認可用時段，再計算。",
       ),
     );
+  for (const t of p.verification || [])
+    $("warnings").append(
+      node("div", `${t.title}：估時歸零，請核對完成條件。`, "warning"),
+    );
   for (const t of p.unplaced)
     $("warnings").append(
       node(
         "div",
-        `${t.title} · 缺 ${hours(t.missing)} · ${t.deadline || "期限待確認"}`,
+        `${t.title} · 缺 ${hours(t.missing)} · ${t.deadline || "期限待確認"} · ${t.reason || "可用時間不足"}`,
         "warning",
       ),
     );
@@ -172,6 +177,7 @@ function render() {
   $("redo").disabled = !store.canRedo;
   renderGoals();
   $("task-list").replaceChildren();
+  const selectedDependency = $("depends").value;
   $("depends").replaceChildren(new Option("無前置任務", ""));
   const selected = $("focus-task").value;
   $("focus-task").replaceChildren(new Option("選擇要記錄的工作", ""));
@@ -210,12 +216,15 @@ function render() {
         f.scrollIntoView({ behavior: "smooth" });
       }),
       btn(t.active ? "暫停推進" : "開始推進", () => {
-        t.active = !t.active;
+        const current = state.tasks.find((x) => x.id === t.id);
+        current.active = !current.active;
         save();
         render();
       }),
       btn(t.done ? "重新開啟" : "確認完成", () => {
-        t.done = !t.done;
+        if (state.timer?.task === t.id) throw Error("請先結束這件工作的計時");
+        const current = state.tasks.find((x) => x.id === t.id);
+        current.done = !current.done;
         save();
         render();
       }),
@@ -225,12 +234,20 @@ function render() {
         if (state.tasks.some((x) => x.depends === t.id))
           throw Error("其他工作依賴此任務，請先移除依賴");
         state.tasks = state.tasks.filter((x) => x.id !== t.id);
+        if (editing === t.id) {
+          editing = null;
+          $("task-form").reset();
+          $("task-submit").textContent = "加入工作";
+          $("cancel-edit").hidden = true;
+        }
         save();
         render();
       }),
     );
     $("task-list").append(x);
   }
+  if (state.tasks.some((t) => t.id === selectedDependency && t.id !== editing))
+    $("depends").value = selectedDependency;
   if (state.tasks.some((t) => t.id === selected))
     $("focus-task").value = selected;
   $("events").replaceChildren();
@@ -249,6 +266,8 @@ function render() {
 }
 $("task-form").onsubmit = safe((e) => {
   e.preventDefault();
+  if (editing && state.timer?.task === editing)
+    throw Error("請先結束計時再修改估時");
   const f = new FormData(e.target);
   const item = {
     id: editing || crypto.randomUUID(),
@@ -375,11 +394,13 @@ $("restore").onchange = async (e) => {
     if (f.size > 2e6) throw Error("檔案不可超過2MB");
     const next = validate(JSON.parse(await f.text()));
     if (!confirm("以備份取代目前規劃？建議先匯出目前資料。")) return;
-    next.timer = null;
+    if (state.timer) throw Error("請先結束目前計時再匯入備份");
     state = next;
     save({ restore: true });
     location.reload();
   } catch (err) {
+    state = store.read();
+    render();
     $("status").textContent = err.message;
   } finally {
     e.target.value = "";
@@ -429,6 +450,7 @@ $("start").onclick = safe(() => {
   if (state.timer) return;
   state = beginFocus(state, $("focus-task").value, Date.now());
   save();
+  render();
   tick();
 });
 $("stop").onclick = safe(() => {

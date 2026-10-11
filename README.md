@@ -36,3 +36,7 @@ node scripts/build-planner.mjs
 ```
 
 保存層支援舊資料遷移、20步復原重做與跨分頁衝突偵測。計時期間清除復原歷史以避免重複計時。月季按週折疊，展開時才建立每日卡片。線上版與單檔版共用同一套源碼。
+
+### 50項問題修復
+
+詳見 [修復紀錄](docs/50項問題修復紀錄.md)。核心測試：`node --test tests/*.test.mjs`；操作測試：先 `npm install --prefix tests/ui`，再 `npm test --prefix tests/ui`。操作測試為DOM模擬，非實際瀏覽器驗證。

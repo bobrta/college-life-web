@@ -1,7 +1,20 @@
-export const minutes = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
-export const clock = (n) =>
-  `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+import { validPlannerDate } from "./validation.mjs";
+export function minutes(t) {
+  if (typeof t !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(t))
+    throw Error("時間需為00:00～23:59");
+  return Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+}
+export function clock(n) {
+  if (!Number.isInteger(n) || n < 0 || n >= 1440)
+    throw Error("時刻需為有效整數分鐘");
+  return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+}
 export function range(anchor, period) {
+  if (
+    !validPlannerDate(anchor) ||
+    !["week", "month", "quarter"].includes(period)
+  )
+    throw Error("規劃日期或週期不正確");
   const d = new Date(anchor + "T12:00:00Z");
   if (period === "week")
     d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
@@ -16,7 +29,16 @@ export function range(anchor, period) {
   return out;
 }
 export function subtract(start, end, blocks) {
-  let free = [[start, end]];
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    start < 0 ||
+    end > 1440 ||
+    end < start
+  )
+    throw Error("可用區間不正確");
+  mergeIntervals(blocks);
+  let free = start === end ? [] : [[start, end]];
   for (const [a, b] of blocks)
     free = free.flatMap(([s, e]) =>
       b <= s || a >= e
@@ -29,6 +51,19 @@ export function subtract(start, end, blocks) {
   return free;
 }
 export function mergeIntervals(intervals) {
+  if (
+    !Array.isArray(intervals) ||
+    intervals.some(
+      (x) =>
+        !Array.isArray(x) ||
+        x.length !== 2 ||
+        !x.every(Number.isFinite) ||
+        x[0] < 0 ||
+        x[1] > 1440 ||
+        x[1] < x[0],
+    )
+  )
+    throw Error("區間格式或順序不正確");
   const sorted = intervals.map((x) => [...x]).sort((a, b) => a[0] - b[0]),
     out = [];
   for (const x of sorted) {
@@ -39,7 +74,9 @@ export function mergeIntervals(intervals) {
   return out;
 }
 export function parseWindows(text) {
+  if (typeof text !== "string") throw Error("請輸入文字時段");
   if (!text.trim()) return [];
+  if (text.split(/[,，\n]/).length > 12) throw Error("每天最多12個時段");
   return text.split(/[,，\n]/).map((part) => {
     const match = part
       .trim()
