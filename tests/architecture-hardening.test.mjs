@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { parseSchedule, toICS } from "../calendar.mjs";
 import { financialOverview } from "../finance.mjs";
 import { validateDecision, rankOptions, quadrant, decisionStage } from "../management.mjs";
-import { moneySummary, validateBackup } from "../life.mjs";
+import { moneySummary, migrate, validateBackup } from "../life.mjs";
 import { createCloudClient } from "../cloud.mjs";
 import { summarizeWrongAnalysis } from "../quiz-analysis.mjs";
 import { validateHub } from "../規劃核心/lifestyle.mjs";
@@ -142,6 +142,15 @@ test("備份與分析資料保留合法高進度和特殊字串分類", () => {
   assert.throws(() => validateBackup(JSON.stringify({ tasks: {}, attempts: [null] })));
   assert.throws(() => validateBackup(JSON.stringify({ tasks: {}, wrong: [42] })));
   assert.doesNotThrow(() => validateBackup(JSON.stringify({ tasks: {}, attempts: [{ id: "a1", date: "2026-10-12", unitId: "u1", correct: false, selected: ["A"], answer: ["B"] }] })));
+  const migrated = migrate({ tasks: { "2026-10-12": [{ title: "舊任務", done: false }, { id: "same", title: "重複鍵一", done: false }, { id: "same", title: "重複鍵二", done: false }] } });
+  assert.equal(new Set(migrated.tasks["2026-10-12"].map(task => task.id)).size, 3);
+  const records = migrate({ tasks: {}, transactions: [{ date: "2026-10-12" }, { id: "same" }, { id: "same" }] }).transactions;
+  assert.equal(new Set(records.map(row => row.id)).size, 3);
+  const safeMaps = migrate({ tasks: {}, mastery: {}, reviewDue: {} });
+  safeMaps.mastery["__proto__"] = "known";
+  safeMaps.reviewDue["constructor"] = { streak: 1 };
+  assert.equal(Object.hasOwn(safeMaps.mastery, "__proto__"), true);
+  assert.equal(Object.hasOwn(safeMaps.reviewDue, "constructor"), true);
 });
 
 test("決策圖拒絕越界評分並安全處理不完整任務狀態", () => {

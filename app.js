@@ -17,7 +17,7 @@ const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fa
 const storageKey='college-os-v1';
 const exportItemPdf=createItemPdfExporter();
 let state=read(storageKey,{tasks:{},wrong:[],mastery:{},events:[]});
-state.tasks??={};state.wrong??=[];state.mastery??={};state.events??=[];state.focusSessions??=[];
+state.tasks??={};state.wrong??=[];state.mastery=Object.assign(Object.create(null),state.mastery??{});state.reviewDue=Object.assign(Object.create(null),state.reviewDue??{});state.events??=[];state.focusSessions??=[];
 state.wrongAnalysis??=[];
 const save=()=>{try{localStorage.setItem(storageKey,JSON.stringify(state,(key,value)=>key==='privateUnits'?undefined:value));document.dispatchEvent(new Event('college-saved'));}catch{$('task-message').textContent='瀏覽器無法儲存紀錄；請匯出備份。';}};
 let builtinUnits=[],units=[],cards=[],cardPool=[],cardSession=[],cardIndex=0,cardOutcomes={known:0,again:0,skip:0},questions=[],quizIndex=0,quizCurrentUnit=null,limit=24,selectedWeek=today,schedule=null,focusTask=null,focusTimer=null,focusRemaining=0,focusPlanned=0,focusFirstStep='',focusPrintRecord=null;
