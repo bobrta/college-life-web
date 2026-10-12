@@ -1115,7 +1115,10 @@ function validateHub(hub) {
       Array.isArray(hub.budgets) ||
       Object.entries(hub.budgets).some(
         ([key, value]) => {
-          const [start, end] = key.split("/");
+          if (typeof key !== "string") return true;
+          const parts = key.split("/");
+          if (parts.length !== 2) return true;
+          const [start, end] = parts;
           return !hubDate(start) || !hubDate(end) || end < start || !money(value);
         },
       ))
@@ -2108,6 +2111,12 @@ function validate(s) {
       !id(e.id) ||
       eventIds.has(e.id) ||
       !text(e.title, 120) ||
+      (e.category !== undefined &&
+        !["course", "study", "rest", "deadline", "personal"].includes(e.category)) ||
+      (e.status !== undefined &&
+        !["draft", "confirmed", "done", "cancelled"].includes(e.status)) ||
+      (e.notes !== undefined &&
+        (typeof e.notes !== "string" || e.notes.length > 2000)) ||
       !time(e.start) ||
       !time(e.end) ||
       e.end <= e.start
@@ -2157,6 +2166,12 @@ function validate(s) {
               ].includes(k),
           ) ||
           (o.title !== undefined && !text(o.title, 120)) ||
+          (o.category !== undefined &&
+            !["course", "study", "rest", "deadline", "personal"].includes(o.category)) ||
+          (o.status !== undefined &&
+            !["draft", "confirmed", "done", "cancelled"].includes(o.status)) ||
+          (o.notes !== undefined &&
+            (typeof o.notes !== "string" || o.notes.length > 2000)) ||
           !time(o.start ?? e.start) ||
           !time(o.end ?? e.end) ||
           (o.end ?? e.end) <= (o.start ?? e.start)
@@ -2359,9 +2374,9 @@ function parseSchedule(text){
  for(let i=1;i<weeks.length;i++)if(weeks[i].start<=weeks[i-1].end)throw Error('週計畫日期不可重疊或倒序。');
  return {timezone:'Asia/Taipei',status:'draft',events,weeks};
 }
-const escapeICS=value=>String(value??'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/;/g,'\\;').replace(/,/g,'\\,');
+const escapeICS=value=>String(value??'').replace(/\\/g,'\\\\').replace(/\r\n|\n|\r/g,'\\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'').replace(/;/g,'\\;').replace(/,/g,'\\,');
 function foldICS(line){const out=[];let part='',bytes=0;for(const char of line){const size=new TextEncoder().encode(char).length;if(bytes+size>73){out.push(part);part=' ';bytes=1;}part+=char;bytes+=size;}out.push(part);return out.join('\r\n');}
-function toICS(events){if(!Array.isArray(events)||events.length>10000)throw Error('ICS行程筆數不正確。');const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//College OS//Local Calendar//ZH','CALSCALE:GREGORIAN'];const timestamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');for(const event of events){const recurring=isRecord(event)&&event.weekday!==undefined;if(!isRecord(event)||(!recurring&&!isDate(event.date))||(recurring&&(!Number.isInteger(event.weekday)||event.weekday<0||event.weekday>6||!isDate(event.from)||!isDate(event.until)||event.until<event.from))||typeof event.id!=='string'||!event.id.trim()||typeof event.title!=='string'||!event.title.trim())throw Error('ICS 行程缺少有效日期、ID或名稱。');let date=event.date;if(recurring){date=event.from;while(new Date(date+'T12:00:00Z').getUTCDay()!==event.weekday)date=nextDate(date);if(date>event.until)continue;}const compact=date.replace(/-/g,'');if(Boolean(event.start)!==Boolean(event.end)||(event.start&&(!isTime(event.start)||!isTime(event.end)||event.end<=event.start)))throw Error('ICS行程時間不完整或不正確。');if(event.notes!==undefined&&typeof event.notes!=='string')throw Error('ICS備註必須為文字。');if(event.excludedDates!==undefined&&(!Array.isArray(event.excludedDates)||event.excludedDates.some(day=>!isDate(day)||day<event.from||day>event.until||new Date(day+'T12:00:00Z').getUTCDay()!==event.weekday)))throw Error('ICS例外日期不正確。');lines.push('BEGIN:VEVENT',`UID:${escapeICS(event.id)}@college-os.local`,`DTSTAMP:${timestamp}`,`SUMMARY:${escapeICS(event.title)}`);if(event.start)lines.push(`DTSTART;TZID=Asia/Taipei:${compact}T${event.start.replace(':','')}00`,`DTEND;TZID=Asia/Taipei:${compact}T${event.end.replace(':','')}00`);else lines.push(`DTSTART;VALUE=DATE:${compact}`,`DTEND;VALUE=DATE:${nextDate(date).replace(/-/g,'')}`);if(recurring){lines.push(`RRULE:FREQ=WEEKLY;BYDAY=${['SU','MO','TU','WE','TH','FR','SA'][event.weekday]};UNTIL=${event.until.replace(/-/g,'')}T155959Z`);if(event.excludedDates?.length)lines.push(`EXDATE;TZID=Asia/Taipei:${event.excludedDates.map(d=>d.replace(/-/g,'')+'T'+(event.start??'00:00').replace(':','')+'00').join(',')}`);}lines.push(`DESCRIPTION:${escapeICS(event.notes??'')}`,'END:VEVENT');}lines.push('END:VCALENDAR');return lines.map(foldICS).join('\r\n')+'\r\n';}
+function toICS(events){if(!Array.isArray(events)||events.length>10000)throw Error('ICS行程筆數不正確。');const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//College OS//Local Calendar//ZH','CALSCALE:GREGORIAN'];const timestamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');for(const event of events){const recurring=isRecord(event)&&event.weekday!==undefined;if(!isRecord(event)||(!recurring&&!isDate(event.date))||(recurring&&(!Number.isInteger(event.weekday)||event.weekday<0||event.weekday>6||!isDate(event.from)||!isDate(event.until)||event.until<event.from))||typeof event.id!=='string'||!event.id.trim()||typeof event.title!=='string'||!event.title.trim())throw Error('ICS 行程缺少有效日期、ID或名稱。');let date=event.date;if(recurring){date=event.from;while(new Date(date+'T12:00:00Z').getUTCDay()!==event.weekday)date=nextDate(date);if(date>event.until)continue;}const compact=date.replace(/-/g,'');if(Boolean(event.start)!==Boolean(event.end)||(event.start&&(!isTime(event.start)||!isTime(event.end)||event.end<=event.start)))throw Error('ICS行程時間不完整或不正確。');if(event.notes!==undefined&&typeof event.notes!=='string')throw Error('ICS備註必須為文字。');if(event.excludedDates!==undefined&&(!Array.isArray(event.excludedDates)||event.excludedDates.some(day=>!isDate(day)||day<event.from||day>event.until||new Date(day+'T12:00:00Z').getUTCDay()!==event.weekday)))throw Error('ICS例外日期不正確。');lines.push('BEGIN:VEVENT',`UID:${escapeICS(event.id)}@college-os.local`,`DTSTAMP:${timestamp}`,`SUMMARY:${escapeICS(event.title)}`);if(event.start)lines.push(`DTSTART;TZID=Asia/Taipei:${compact}T${event.start.replace(':','')}00`,`DTEND;TZID=Asia/Taipei:${compact}T${event.end.replace(':','')}00`);else lines.push(`DTSTART;VALUE=DATE:${compact}`,`DTEND;VALUE=DATE:${nextDate(date).replace(/-/g,'')}`);if(recurring){const until=event.until.replace(/-/g,'')+(event.start?'T155959Z':'');lines.push(`RRULE:FREQ=WEEKLY;BYDAY=${['SU','MO','TU','WE','TH','FR','SA'][event.weekday]};UNTIL=${until}`);if(event.excludedDates?.length){const values=event.excludedDates.map(d=>d.replace(/-/g,'')+(event.start?'T'+event.start.replace(':','')+'00':''));lines.push(`${event.start?'EXDATE;TZID=Asia/Taipei':'EXDATE;VALUE=DATE'}:${values.join(',')}`);}}lines.push(`DESCRIPTION:${escapeICS(event.notes??'')}`,'END:VEVENT');}lines.push('END:VCALENDAR');return lines.map(foldICS).join('\r\n')+'\r\n';}
 function nextDate(date){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10);}
 
 

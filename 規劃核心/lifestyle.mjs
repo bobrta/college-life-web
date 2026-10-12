@@ -50,7 +50,10 @@ export function validateHub(hub) {
       Array.isArray(hub.budgets) ||
       Object.entries(hub.budgets).some(
         ([key, value]) => {
-          const [start, end] = key.split("/");
+          if (typeof key !== "string") return true;
+          const parts = key.split("/");
+          if (parts.length !== 2) return true;
+          const [start, end] = parts;
           return !hubDate(start) || !hubDate(end) || end < start || !money(value);
         },
       ))

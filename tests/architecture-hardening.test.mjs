@@ -2,9 +2,12 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseSchedule, toICS } from "../calendar.mjs";
 import { financialOverview } from "../finance.mjs";
-import { validateDecision, rankOptions } from "../management.mjs";
-import { moneySummary } from "../life.mjs";
+import { validateDecision, rankOptions, quadrant, decisionStage } from "../management.mjs";
+import { moneySummary, validateBackup } from "../life.mjs";
 import { createCloudClient } from "../cloud.mjs";
+import { summarizeWrongAnalysis } from "../quiz-analysis.mjs";
+import { validateHub } from "../規劃核心/lifestyle.mjs";
+import { loadKnowledgeFile, readLimited } from "../knowledge-loader.mjs";
 
 const validEvent = () => ({
   id: "e1",
@@ -119,12 +122,52 @@ test("ICS 匯出保留週期、全天結束日與換行注入防護", () => {
   const allDay = toICS([{ id: "all-day", title: "休息", date: "2026-10-12" }]);
   assert.match(allDay, /DTEND;VALUE=DATE:20261013/);
   assert.doesNotMatch(toICS([{ id: "a", title: "標題\r\nBEGIN:VEVENT", date: "2026-10-12" }]), /\r\nBEGIN:VEVENT\r\nBEGIN:VEVENT/);
+  const allDayRepeat = toICS([{ id: "all-day-repeat", title: "每週休息", weekday: 1, from: "2026-10-12", until: "2026-10-31" , excludedDates: ["2026-10-19"]}]);
+  assert.match(allDayRepeat, /RRULE:[^\r\n]*UNTIL=20261031(?:\r\n|$)/);
+  assert.match(allDayRepeat, /EXDATE;VALUE=DATE:20261019/);
+  assert.doesNotMatch(allDayRepeat, /EXDATE;TZID/);
+  assert.doesNotMatch(toICS([{ id: "cr", title: "有\r注入", date: "2026-10-12" }]), /\rBEGIN:VEVENT/);
+});
+
+test("備份與分析資料保留合法高進度和特殊字串分類", () => {
+  const backup = validateBackup(JSON.stringify({ tasks: {}, plans: [{ title: "完成 30 項", due: "2026-10-20", target: 2, current: 30 }] }));
+  assert.equal(backup.plans[0].current, 30);
+  const analysis = summarizeWrongAnalysis([{ reason: "__proto__" }], [{ domain: "constructor", correct: true }]);
+  assert.equal(analysis.reasons.__proto__, 1);
+  assert.equal(analysis.topics[0].topic, "constructor");
+});
+
+test("決策圖拒絕越界評分並安全處理不完整任務狀態", () => {
+  assert.throws(() => quadrant(0, 5));
+  assert.throws(() => quadrant(4, 5.5));
+  assert.throws(() => decisionStage({}, { tasks: null }));
+  assert.equal(decisionStage({ taskId: "x" }, { tasks: { today: null } }), "plan");
+});
+
+test("期間預算必須使用剛好兩個有效日期", () => {
+  const base = { version: 1, opening: 0, reserve: 0, budget: 0, resources: "", wipLimit: 3, transactions: [], decisions: [], health: [], budgets: {} };
+  for (const key of ["2026-10-01/2026-10-31/extra", "2026-10-01", "2026-10-31/2026-10-01"]) {
+    assert.throws(() => validateHub({ ...base, budgets: { [key]: 100 } }));
+  }
+  assert.doesNotThrow(() => validateHub({ ...base, budgets: { "2026-10-01/2026-10-31": 100 } }));
+});
+
+test("知識資料串流有大小上限且 gzip 內容可正常讀取", async () => {
+  await assert.rejects(loadKnowledgeFile("../private.json", async () => { throw Error("不應發出請求"); }), /檔名/);
+  await assert.rejects(readLimited(new Blob([new Uint8Array(5)]).stream(), 4, "測試資料"), /大小上限/);
+  const source = '{"id":"unit-1"}\n{"id":"unit-2"}\n';
+  const compressed = await new Response(new Blob([source]).stream().pipeThrough(new CompressionStream("gzip"))).arrayBuffer();
+  const loaded = await loadKnowledgeFile("sample.json.gz", async () => new Response(compressed));
+  assert.deepEqual(loaded, [{ id: "unit-1" }, { id: "unit-2" }]);
 });
 
 test("密碼重設無法驗證服務端身份時不安裝工作階段", async () => {
   const stored = new Map();
   const client = createCloudClient({ enabled: true, url: "https://example.invalid", publishableKey: "public" }, async () => ({ ok: false, status: 401 }), { setItem: (k, v) => stored.set(k, v), getItem: k => stored.get(k), removeItem: k => stored.delete(k) });
   await assert.rejects(client.recoverFromHash("#access_token=bad&refresh_token=bad"));
+  assert.equal(stored.size, 0);
+  await assert.rejects(client.recoverFromHash("#access_token=bad&refresh_token=bad&expires_at=nope"), /期限格式/);
+  await assert.rejects(client.recoverFromHash("#access_token=bad&refresh_token=bad&expires_in=0"), /期限格式/);
   assert.equal(stored.size, 0);
 });
 

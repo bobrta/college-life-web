@@ -130,6 +130,12 @@ export function validate(s) {
       !id(e.id) ||
       eventIds.has(e.id) ||
       !text(e.title, 120) ||
+      (e.category !== undefined &&
+        !["course", "study", "rest", "deadline", "personal"].includes(e.category)) ||
+      (e.status !== undefined &&
+        !["draft", "confirmed", "done", "cancelled"].includes(e.status)) ||
+      (e.notes !== undefined &&
+        (typeof e.notes !== "string" || e.notes.length > 2000)) ||
       !time(e.start) ||
       !time(e.end) ||
       e.end <= e.start
@@ -179,6 +185,12 @@ export function validate(s) {
               ].includes(k),
           ) ||
           (o.title !== undefined && !text(o.title, 120)) ||
+          (o.category !== undefined &&
+            !["course", "study", "rest", "deadline", "personal"].includes(o.category)) ||
+          (o.status !== undefined &&
+            !["draft", "confirmed", "done", "cancelled"].includes(o.status)) ||
+          (o.notes !== undefined &&
+            (typeof o.notes !== "string" || o.notes.length > 2000)) ||
           !time(o.start ?? e.start) ||
           !time(o.end ?? e.end) ||
           (o.end ?? e.end) <= (o.start ?? e.start)

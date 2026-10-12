@@ -256,3 +256,15 @@ test("P43 相隔五分鐘的時段仍要保留十分鐘休息", () => {
   for (let i = 1; i < blocks.length; i++)
     assert.ok(blocks[i].start - blocks[i - 1].end >= 10);
 });
+test("P44 匯入規劃狀態時拒絕錯誤行程分類與覆寫欄位", () => {
+  for (const invalidEvent of [
+    { ...event(), category: "unknown" },
+    { ...repeat(), overrides: { "2026-10-05": { category: "unknown" } } },
+    { ...repeat(), overrides: { "2026-10-05": { notes: 42 } } },
+    { ...event(), status: "maybe" },
+  ]) {
+    const s = base();
+    s.events = [invalidEvent];
+    assert.throws(() => validate(s));
+  }
+});
