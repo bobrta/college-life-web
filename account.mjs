@@ -30,10 +30,11 @@ export async function mountAccount(config,state,callbacks){
  }
  async function activate(user,cachedState=null){
   callbacks.setStorageKey('college-os-account-'+user.id);
-  let remote=null;try{remote=await client.load();}catch{}
+  let remote=null,remoteUnavailable=false;try{remote=await client.load();}catch(error){remoteUnavailable=true;status('雲端讀取失敗：'+error.message+'。本機資料未替換，請確認網路後重試。');}
   let local=cachedState; if(!local){try{local=JSON.parse(localStorage.getItem('college-os-account-'+user.id));}catch{}}
+  if(remoteUnavailable&&!local)throw Error('雲端暫時無法讀取，且沒有本機備份。已停止登入切換，避免空資料覆寫原紀錄。');
   const loaded=local?validateBackup(JSON.stringify(local)):remote?validateBackup(JSON.stringify(remote)):empty();
-  stale=!!local&&Number(local.cloudVersion??0)!==client.version;
+  stale=!!local&&(remoteUnavailable||Number(local.cloudVersion??0)!==client.version);
   if(!local)loaded.cloudVersion=client.version;
   await replace(loaded);logged=true;controls(true);callbacks.setAuthenticated(true);
   autosync.start();

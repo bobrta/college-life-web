@@ -49,8 +49,10 @@ export function validateHub(hub) {
       typeof hub.budgets !== "object" ||
       Array.isArray(hub.budgets) ||
       Object.entries(hub.budgets).some(
-        ([key, value]) =>
-          !/^\d{4}-\d{2}-\d{2}\/\d{4}-\d{2}-\d{2}$/.test(key) || !money(value),
+        ([key, value]) => {
+          const [start, end] = key.split("/");
+          return !hubDate(start) || !hubDate(end) || end < start || !money(value);
+        },
       ))
   )
     throw Error("期間預算不正確");
@@ -99,7 +101,7 @@ export function validateHub(hub) {
         (n) => Number.isInteger(n) && n >= 1 && n <= 5,
       ) ||
       (row.deadline !== "" && !hubDate(row.deadline)) ||
-      (row.taskId !== undefined && typeof row.taskId !== "string")
+      (row.taskId !== undefined && (typeof row.taskId !== "string" || !row.taskId.trim()))
     )
       throw Error("決策資料不正確");
   if (hub.decisions.filter((r) => r.pool === "doing").length > hub.wipLimit)
@@ -199,10 +201,10 @@ export function parseHubCommand(text, baseDate) {
     day = source.match(/\b\d{4}-\d{2}-\d{2}\b/)?.[0] || baseDate;
   if (source.startsWith("/cal ")) {
     const times = source.match(/\b([0-2]\d:[0-5]\d)-([0-2]\d:[0-5]\d)\b/),
-      cost = source.match(/\$(\d+(?:\.\d{1,2})?)/);
+      cost = source.match(/\$(\d+(?:\.\d{1,2})?)(?![\d.])/);
     if (!title || !times)
       throw Error("行程格式：/cal 2026-10-15 14:00-15:00 [寫報告] $150");
-    return {
+    const result={
       kind: "cal",
       date: day,
       start: times[1],
@@ -210,11 +212,14 @@ export function parseHubCommand(text, baseDate) {
       title,
       cost: cost ? cost[1] : "0",
     };
+    if(!hubDate(day)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(result.start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(result.end)||result.end<=result.start)throw Error("行程日期或時段不正確");
+    return result;
   }
   if (source.startsWith("/fin ")) {
     const amount = source.match(/^\/fin\s+([+-])(\d+(?:\.\d{1,2})?)(?=\s|$)/),
       category = source.match(/#([^\s\[]+)/)?.[1] || "其他";
     if (!amount) throw Error("記帳格式：/fin -150 #餐費 [午餐]");
+    if(!hubDate(day))throw Error("收支日期不正確");
     return {
       kind: "fin",
       date: day,
@@ -240,7 +245,8 @@ export function parseHubCommand(text, baseDate) {
   }
   if (source.startsWith("/fit ")) {
     const minutes = source.match(/\b(\d+)m\b/);
-    if (!minutes) throw Error("運動格式：/fit 2026-10-15 20m #walk [散步]");
+    if (!minutes) throw Error("運動格式：/fit 20m #walk [散步]");
+    if(!hubDate(day))throw Error("活動日期不正確");
     return {
       kind: "fit",
       date: day,
