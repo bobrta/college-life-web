@@ -139,6 +139,9 @@ test("備份與分析資料保留合法高進度和特殊字串分類", () => {
   const analysis = summarizeWrongAnalysis([{ reason: "__proto__" }], [{ domain: "constructor", correct: true }]);
   assert.equal(analysis.reasons.__proto__, 1);
   assert.equal(analysis.topics[0].topic, "constructor");
+  assert.throws(() => validateBackup(JSON.stringify({ tasks: {}, attempts: [null] })));
+  assert.throws(() => validateBackup(JSON.stringify({ tasks: {}, wrong: [42] })));
+  assert.doesNotThrow(() => validateBackup(JSON.stringify({ tasks: {}, attempts: [{ id: "a1", date: "2026-10-12", unitId: "u1", correct: false, selected: ["A"], answer: ["B"] }] })));
 });
 
 test("決策圖拒絕越界評分並安全處理不完整任務狀態", () => {
