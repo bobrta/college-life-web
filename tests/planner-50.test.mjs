@@ -13,6 +13,12 @@ const { range, minutes, clock, subtract, mergeIntervals, parseWindows } =
 const { plan } = await import(
   pathToFileURL(resolve(root, "規劃核心/scheduler.mjs"))
 );
+const { capacity } = await import(
+  pathToFileURL(resolve(root, "規劃核心/capacity.mjs"))
+);
+const { conflicts, workloadByDay } = await import(
+  pathToFileURL(resolve(root, "calendar.mjs"))
+);
 const base = () => ({
   version: 1,
   revision: 0,
@@ -267,4 +273,14 @@ test("P44 匯入規劃狀態時拒絕錯誤行程分類與覆寫欄位", () => {
     s.events = [invalidEvent];
     assert.throws(() => validate(s));
   }
+});
+test("P45 已取消的固定事件不占容量、不計時數或製造衝突", () => {
+  const s = base();
+  s.events = [{ ...event(), status: "cancelled" }];
+  assert.deepEqual(capacity("2026-10-12", s).free, [[480, 720]]);
+  assert.equal(workloadByDay(s.events, ["2026-10-12"])[0].total, 0);
+  assert.deepEqual(conflicts([{ ...event(), status: "cancelled" }, event()]), []);
+});
+test("P46 衝突計算對損壞行程回傳明確驗證錯誤", () => {
+  assert.throws(() => conflicts([null]), /有效清單/);
 });

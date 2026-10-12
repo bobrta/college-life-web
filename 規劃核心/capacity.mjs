@@ -7,7 +7,7 @@ export function capacity(date, state, cutoff = 0) {
     events = eventsOn(state.events, date),
     windows = day.windows ?? [{ start: day.start, end: day.end }],
     blocked = events
-      .filter((e) => e.start && e.end)
+      .filter((e) => e.status !== "cancelled" && e.start && e.end)
       .map((e) => [minutes(e.start), minutes(e.end)]),
     free = mergeIntervals(
       windows
