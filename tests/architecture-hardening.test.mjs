@@ -127,6 +127,10 @@ test("ICS 匯出保留週期、全天結束日與換行注入防護", () => {
   assert.match(allDayRepeat, /EXDATE;VALUE=DATE:20261019/);
   assert.doesNotMatch(allDayRepeat, /EXDATE;TZID/);
   assert.doesNotMatch(toICS([{ id: "cr", title: "有\r注入", date: "2026-10-12" }]), /\rBEGIN:VEVENT/);
+  const override = toICS([{ id: "series-override", title: "補課", weekday: 1, from: "2026-10-12", until: "2026-10-31", start: "08:00", end: "09:00", overrides: { "2026-10-19": { title: "改期補課", start: "10:00", end: "11:00" } } }]);
+  assert.match(override, /RECURRENCE-ID;TZID=Asia\/Taipei:20261019T080000/);
+  assert.match(override, /SUMMARY:改期補課/);
+  assert.equal((override.match(/BEGIN:VEVENT/g) ?? []).length, 2);
 });
 
 test("備份與分析資料保留合法高進度和特殊字串分類", () => {
