@@ -12,10 +12,11 @@ export function clock(n) {
 export function range(anchor, period) {
   if (
     !validPlannerDate(anchor) ||
-    !["week", "month", "quarter", "year"].includes(period)
+    !["day", "week", "month", "quarter", "year"].includes(period)
   )
     throw Error("規劃日期或週期不正確");
   const d = new Date(anchor + "T12:00:00Z");
+  if (period === "day") return [anchor];
   if (period === "week")
     d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
   else d.setUTCDate(1);
@@ -32,6 +33,28 @@ export function range(anchor, period) {
   for (; d < end; d.setUTCDate(d.getUTCDate() + 1))
     out.push(d.toISOString().slice(0, 10));
   return out;
+}
+export function shiftPeriod(anchor, period, amount) {
+  if (
+    !validPlannerDate(anchor) ||
+    !["day", "week", "month", "quarter", "year"].includes(period) ||
+    !Number.isInteger(amount)
+  )
+    throw Error("日期移動參數不正確");
+  const date = new Date(anchor + "T12:00:00Z");
+  const day = date.getUTCDate();
+  if (period === "day") date.setUTCDate(day + amount);
+  else if (period === "week") date.setUTCDate(day + amount * 7);
+  else {
+    const months = period === "month" ? 1 : period === "quarter" ? 3 : 12;
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() + amount * months);
+    const last = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    date.setUTCDate(Math.min(day, last));
+  }
+  return date.toISOString().slice(0, 10);
 }
 export function subtract(start, end, blocks) {
   if (
