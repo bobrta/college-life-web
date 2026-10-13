@@ -175,6 +175,25 @@ form,
 #schedule.week-grid .block { display: block; padding: 8px; font-size: 12px; }
 #schedule.week-grid .block button { margin-top: 6px; }
 .fixed-event { border-left-color: #9aa89e; background: #f1f3f0; color: #526159; }
+.calendar-date,
+#schedule .block .event-open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.calendar-date { font-weight: 700; }
+#schedule .event-open { width: 100%; overflow-wrap: anywhere; }
+.calendar-date:hover, #schedule .event-open:hover { text-decoration: underline; }
+.calendar-date:focus-visible, #schedule .event-open:focus-visible {
+  outline: 2px solid #2b6752;
+  outline-offset: 4px;
+}
 .schedule-diagnostics { margin-top: 20px; }
 .schedule-diagnostics > .panel { margin: 12px 0; }
 .day h3 {
