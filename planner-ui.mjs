@@ -19,6 +19,7 @@ const $ = (id) => document.getElementById(id),
   weekdays = ["日", "一", "二", "三", "四", "五", "六"];
 const store = createPlannerStore(localStorage, key);
 let editing = null,
+  editingEvent = null,
   revision = 0;
 let state = store.read();
 if (store.error) $("status").textContent = "原資料未覆寫：" + store.error;
@@ -102,6 +103,7 @@ const initial = new Date(today + "T12:00:00Z");
 if (initial.getUTCDay() === 0) initial.setUTCDate(initial.getUTCDate() + 1);
 $("anchor").value = initial.toISOString().slice(0, 10);
 document.querySelector("[name=date]").value = today;
+resetEventEditor();
 for (const b of document.querySelectorAll("[data-tab]"))
   b.onclick = () =>
     $(b.dataset.tab).scrollIntoView?.({ behavior: "smooth", block: "start" });
@@ -166,7 +168,13 @@ function render() {
   renderSchedule($("schedule"), p, {
     period: $("period").value,
     limit: state.settings.limit,
-    displayDates: $("period").value === "week" ? dates : [],
+    displayDates: ["day", "week"].includes($("period").value) ? dates : [],
+    onSelectDate: safe((date) => {
+      $("anchor").value = date;
+      $("period").value = "day";
+      render();
+    }),
+    onEditEvent: safe((event) => beginEventEdit(event._seriesId || event.id)),
     eventsOnDate: (date) => eventsOn(state.events, date),
     onFocus: (id) => {
       $("focus-task").value = id;
@@ -253,18 +261,25 @@ function render() {
   if (state.tasks.some((t) => t.id === selected))
     $("focus-task").value = selected;
   $("events").replaceChildren();
-  for (const e of state.events)
-    $("events").append(
+  if (editingEvent && !state.events.some((event) => event.id === editingEvent))
+    resetEventEditor();
+  for (const e of state.events) {
+    const row = node("div", undefined, "block");
+    row.append(
       node(
         "p",
         `${e.title} · ${e.date || "每週" + weekdays[e.weekday]} ${e.start}–${e.end}`,
       ),
+      btn("編輯事件", () => beginEventEdit(e.id)),
       btn("移除事件", () => {
         state.events = state.events.filter((x) => x.id !== e.id);
         save();
+        if (editingEvent === e.id) resetEventEditor();
         render();
       }),
     );
+    $("events").append(row);
+  }
 }
 $("task-form").onsubmit = safe((e) => {
   e.preventDefault();
@@ -343,32 +358,85 @@ $("settings-form").onsubmit = safe((e) => {
   render();
   $("status").textContent = "已保存。建議排程已重新計算。";
 });
+function resetEventEditor() {
+  editingEvent = null;
+  const form = $("event-form");
+  for (const field of ["title", "start", "end"]) form.elements[field].value = "";
+  form.elements.date.value = $("anchor").value || today;
+  form.elements.date.readOnly = false;
+  form.elements.repeat.checked = false;
+  form.elements.repeat.disabled = false;
+  $("event-submit").textContent = "加入固定事件";
+  $("event-cancel-edit").hidden = true;
+  $("event-edit-note").hidden = true;
+  $("event-edit-note").textContent = "";
+}
+function beginEventEdit(id) {
+  const event = state.events.find((item) => item.id === id);
+  if (!event) throw Error("行程已不存在，請重新選取。");
+  const form = $("event-form"), series = event.weekday !== undefined;
+  if (editingEvent === id) {
+    form.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    form.elements.title.focus?.();
+    return;
+  }
+  const current = state.events.find((item) => item.id === editingEvent);
+  const dirty = current
+    ? ["title", "start", "end"].some((field) => form.elements[field].value !== current[field]) ||
+      form.elements.date.value !== (current.date || current.from) ||
+      form.elements.repeat.checked !== (current.weekday !== undefined)
+    : ["title", "start", "end"].some((field) => form.elements[field].value.trim());
+  if (dirty && !confirm("切換行程會放棄目前未保存的內容，確定繼續？")) return;
+  editingEvent = id;
+  for (const field of ["title", "start", "end"]) form.elements[field].value = event[field];
+  form.elements.date.value = series ? event.from : event.date;
+  form.elements.date.readOnly = series;
+  form.elements.repeat.checked = series;
+  form.elements.repeat.disabled = series;
+  $("event-submit").textContent = "保存行程修改";
+  $("event-cancel-edit").hidden = false;
+  $("event-edit-note").hidden = false;
+  $("event-edit-note").textContent = series
+    ? `編輯整個每週系列（${event.from} ～ ${event.until}）；保留重複規則與單次例外。`
+    : "修改這一筆行程；原分類、備註與關聯資料會保留。";
+  form.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  form.elements.title.focus?.();
+}
+$("event-cancel-edit").onclick = resetEventEditor;
 $("event-form").onsubmit = safe((e) => {
   e.preventDefault();
+  const previous = editingEvent ? state.events.find((item) => item.id === editingEvent) : null;
+  if (editingEvent && !previous) throw Error("行程已不存在，請取消編輯後重新加入。");
   const f = new FormData(e.target),
     date = f.get("date"),
     item = {
-      id: crypto.randomUUID(),
+      ...previous,
+      id: previous?.id || crypto.randomUUID(),
       title: f.get("title").trim(),
-      date,
       start: f.get("start"),
       end: f.get("end"),
     };
   if (item.end <= item.start)
     throw Error("結束需晚於開始；跨午夜請拆成兩個事件");
-  if (f.has("repeat")) {
+  if (previous?.weekday === undefined) item.date = date;
+  if (previous?.weekday === undefined && f.has("repeat")) {
     item.weekday = new Date(date + "T12:00:00Z").getUTCDay();
     item.from = date;
     item.until = range(date, "quarter").at(-1);
     delete item.date;
   }
-  const next = { ...state, events: [...state.events, item] };
+  const next = {
+    ...state,
+    events: previous
+      ? state.events.map((event) => event.id === previous.id ? item : event)
+      : [...state.events, item],
+  };
   validate(next);
   state = next;
   save();
+  resetEventEditor();
   render();
-  e.target.reset();
-  e.target.elements.date.value = today;
+  $("status").textContent = previous ? "行程已修改，容量已重新計算。" : "已加入固定行程。";
 });
 for (const id of ["period", "anchor"]) $(id).onchange = safe(render);
 $("previous-period").onclick = safe(() => {
