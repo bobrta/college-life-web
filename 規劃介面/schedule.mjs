@@ -2,7 +2,7 @@ import { clock, range } from "../規劃核心/time.mjs";
 export function renderSchedule(
   container,
   result,
-  { period, limit, onFocus, eventsOnDate = () => [], displayDates = [] },
+  { period, limit, onFocus, onSelectDate, onEditEvent, eventsOnDate = () => [], displayDates = [] },
 ) {
   const doc = container.ownerDocument;
   const make = (tag, text, cls) => {
@@ -14,7 +14,15 @@ export function renderSchedule(
   const h = (n) => (n / 60).toFixed(1) + "h";
   function dayCard(day) {
     const article = make("article", undefined, day.past ? "day past-day" : "day");
-    article.append(make("h3", day.date));
+    const heading = make("h3");
+    if (onSelectDate && period === "week") {
+      const dateButton = make("button", day.date, "calendar-date");
+      dateButton.type = "button";
+      dateButton.setAttribute("aria-label", `查看 ${day.date} 日程`);
+      dateButton.onclick = () => onSelectDate(day.date);
+      heading.append(dateButton);
+    } else heading.textContent = day.date;
+    article.append(heading);
     article.append(
       make(
         "p",
@@ -26,7 +34,14 @@ export function renderSchedule(
     const fixed = eventsOnDate(day.date);
     for (const event of fixed) {
       const row = make("div", undefined, "block fixed-event");
-      row.append(make("span", `${event.start}–${event.end}　${event.title}`));
+      const label = `${event.start}–${event.end}　${event.title}`;
+      if (onEditEvent) {
+        const editButton = make("button", label, "event-open");
+        editButton.type = "button";
+        editButton.setAttribute("aria-label", `編輯行程：${event.title}`);
+        editButton.onclick = () => onEditEvent(event);
+        row.append(editButton);
+      } else row.append(make("span", label));
       article.append(row);
     }
     for (const block of day.blocks) {
@@ -48,13 +63,13 @@ export function renderSchedule(
   }
   container.replaceChildren();
   container.classList.toggle("week-grid", period === "week");
-  if (!result.days.length && !(period === "week" && displayDates.length)) {
+  if (!result.days.length && !(["day", "week"].includes(period) && displayDates.length)) {
     container.append(make("p", "所選週期已結束，請切換日期。"));
     return;
   }
   if (period === "day" || period === "week") {
     const days =
-      period === "week" && displayDates.length
+      displayDates.length
         ? displayDates.map((date) =>
             result.days.find((day) => day.date === date) || {
               date,
