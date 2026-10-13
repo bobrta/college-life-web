@@ -299,6 +299,17 @@ test("日視圖與日期前後按鈕可切換且顯示固定行程", async () =>
   ui.$("previous-period").onclick();
   assert.equal(ui.$("anchor").value, "2026-10-15");
 });
+test("週視圖保留完整七天並標記已過日期", async () => {
+  const ui = await loadUI("week-seven-days");
+  ui.$("period").value = "week";
+  ui.$("anchor").value = "2026-10-13";
+  ui.$("period").onchange();
+  const days = [...ui.$("schedule").querySelectorAll(".day")];
+  assert.equal(days.length, 7);
+  assert.equal(days[0].querySelector("h3").textContent, "2026-10-12");
+  assert.match(days[0].textContent, /已過日期/);
+  assert.equal(days[1].querySelector("h3").textContent, "2026-10-13");
+});
 test("固定行程同步雙向合併並保留主日曆其他資料", async () => {
   const ui = await loadUI("calendar-safe-sync");
   ui.writeStorage("college-os-v1", {
