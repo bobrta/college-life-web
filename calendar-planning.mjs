@@ -299,3 +299,13 @@ export function generateStudyTemplate({
   }
   return parseSchedule(JSON.stringify({ events })).events;
 }
+
+export function formatMinutes(value) {
+  if (!Number.isFinite(value)) throw Error("時數不正確。");
+  const n = Math.round(Math.abs(value)),
+    h = Math.floor(n / 60),
+    m = n % 60;
+  return (
+    (value < 0 ? "−" : "") + (h ? h + "小時" : "") + (m || !h ? m + "分" : "")
+  );
+}

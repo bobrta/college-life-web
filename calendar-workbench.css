@@ -892,7 +892,9 @@
   }
 }
 @media print {
-  #printable-calendar {page:calendar-landscape;}
+  #printable-calendar {
+    page: calendar-landscape;
+  }
   @page calendar-landscape {
     size: A4 landscape;
     margin: 10mm;

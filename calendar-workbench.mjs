@@ -9,6 +9,7 @@ import {
 } from "./calendar.mjs";
 import { calendarDate, minutes } from "./calendar-schema.mjs";
 import {
+  formatMinutes,
   defaultCalendarPlan,
   validateCalendarPlan,
   periodDates,
@@ -236,7 +237,8 @@ export function mountCalendarWorkbench(api) {
       openSettings();
     }),
   );
-  if(api.downloadOriginal)toolsContent.append(button('下載原始本機資料',safe(api.downloadOriginal)));
+  if (api.downloadOriginal)
+    toolsContent.append(button("下載原始本機資料", safe(api.downloadOriginal)));
   const printFormat = selectField("PDF 版型", "calendar-print-format", [
     ["panorama", "全景作息表"],
     ["detail", "行程明細"],
@@ -522,6 +524,10 @@ export function mountCalendarWorkbench(api) {
     return parseSchedule(JSON.stringify({ events: [item] })).events[0];
   }
   function renderPreview() {
+    if (!$("event-title").value.trim()) {
+      preview.textContent = "先填名稱與日期；時間可留白作全天提醒。";
+      return;
+    }
     try {
       const candidate = readCandidate(),
         base =
@@ -539,7 +545,7 @@ export function mountCalendarWorkbench(api) {
         editing?.id ?? editing?._seriesId,
       );
       preview.textContent =
-        `占用 ${p.duration} 分鐘 · 當週學習容量剩 ${hours(p.remainingStudyMinutes)} 小時 · 當日主要事項 ${p.majorCount} 項` +
+        `占用 ${p.duration} 分鐘 · 當週學習容量剩 ${formatMinutes(p.remainingStudyMinutes)} · 當日主要事項 ${p.majorCount} 項` +
         (p.conflicts.length ? ` · ${p.conflicts.length} 處重疊` : "") +
         (p.restConflicts.length ? " · 占用休息，請先調整" : "");
     } catch (e) {
@@ -868,7 +874,7 @@ export function mountCalendarWorkbench(api) {
       for (const x of staged) map.set(x.id, x);
       const s = summarize(staged, dates, getPlan()),
         combined = summarize([...map.values()], dates, getPlan());
-      templatePreview.textContent = `${staged.length} 段行程 · 學習 ${hours(s.totals.study)} 小時 · 休息 ${hours(s.totals.rest)} 小時 · 合併後 ${combined.conflictCount} 組衝突。相同模板ID會更新；其他原行程保留，請先處理重疊。`;
+      templatePreview.textContent = `${staged.length} 段行程 · 學習 ${formatMinutes(s.totals.study)} · 休息 ${formatMinutes(s.totals.rest)} · 合併後 ${combined.conflictCount} 組衝突。相同模板ID會更新；其他原行程保留，請先處理重疊。`;
       applyTemplate.disabled = !staged.length;
     } catch (e) {
       staged = null;
@@ -981,13 +987,13 @@ export function mountCalendarWorkbench(api) {
       ["本週目標", w.targetHours + " h", "淨學習目標，可調整"],
       [
         "已排學習",
-        hours(ws.scheduled) + " h",
+        formatMinutes(ws.scheduled),
         "休息另計 " + hours(ws.totals.rest) + " h",
       ],
-      ["實際學習", hours(ws.actual) + " h", "逐日填寫的學習紀錄"],
+      ["實際學習", formatMinutes(ws.actual), "逐日填寫的學習紀錄"],
       [
         "剩餘容量",
-        hours(w.capacityHours * 60 - ws.scheduled) + " h",
+        formatMinutes(w.capacityHours * 60 - ws.scheduled),
         "本週上限 " + w.capacityHours + " h",
       ],
     ]) {

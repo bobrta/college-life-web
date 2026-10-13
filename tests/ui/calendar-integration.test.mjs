@@ -144,6 +144,36 @@ test("日曆主程式整合：啟動、匯入、保存、圖表與列印仍可�
   $("event-title").value = "修改";
   $("event-form").onsubmit({ preventDefault() {} });
   assert.equal(JSON.parse(data.get("college-os-v1")).events[0].notes, "保留");
+  // A stale tab must not overwrite another tab's records.
+  const saved = data.get("college-os-v1");
+  const externallyChanged = JSON.parse(saved);
+  externallyChanged.events.push({
+    id: "other-tab",
+    date: "2026-10-12",
+    title: "另一分頁",
+    start: "09:00",
+    end: "10:00",
+    category: "course",
+  });
+  data.set("college-os-v1", JSON.stringify(externallyChanged));
+  document.querySelector('[data-event-id="integration"]').onclick();
+  $("event-title").value = "不應覆蓋";
+  $("event-form").onsubmit({ preventDefault() {} });
+  assert.equal(JSON.parse(data.get("college-os-v1")).events.length, 2);
+  assert.match($("calendar-status").textContent, /另一個分頁/);
+  data.set("college-os-v1", saved);
+  $("cancel-event-edit").onclick();
+  // Quota failures roll back the in-memory event and retain the persisted value.
+  document.querySelector('[data-event-id="integration"]').onclick();
+  $("event-title").value = "保存失敗的修改";
+  const setItem = localStorage.setItem;
+  localStorage.setItem = () => {
+    throw Error("quota");
+  };
+  $("event-form").onsubmit({ preventDefault() {} });
+  localStorage.setItem = setItem;
+  assert.equal(JSON.parse(data.get("college-os-v1")).events[0].title, "修改");
+  $("cancel-event-edit").onclick();
   $("calendar-print-format").value = "panorama";
   $("print-calendar").onclick();
   assert.ok($("printable-calendar").querySelector(".cal-panorama"));
