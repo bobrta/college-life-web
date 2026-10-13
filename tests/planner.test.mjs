@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { subtract, pert, range, plan, validate } from "../planner-core.mjs";
+import {
+  subtract,
+  pert,
+  range,
+  shiftPeriod,
+  plan,
+  validate,
+} from "../planner-core.mjs";
 const base = () => ({
   version: 1,
   settings: { limit: 2, buffer: 20, focus: 50, rest: 10, minBlock: 20 },
@@ -40,6 +47,12 @@ test("PERT validates ordering", () => {
 test("月季跨年與閏年", () => {
   assert.equal(range("2028-02-20", "month").length, 29);
   assert.equal(range("2026-12-31", "quarter").at(-1), "2026-12-31");
+});
+test("日視圖與週期前後切換支援月底及閏日", () => {
+  assert.deepEqual(range("2028-02-29", "day"), ["2028-02-29"]);
+  assert.equal(shiftPeriod("2028-01-31", "month", 1), "2028-02-29");
+  assert.equal(shiftPeriod("2028-02-29", "year", 1), "2029-02-28");
+  assert.equal(shiftPeriod("2026-10-15", "week", -1), "2026-10-08");
 });
 test("時間與件數限制且區段不重疊", () => {
   const s = base();
