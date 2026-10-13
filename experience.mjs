@@ -5,7 +5,7 @@ function n(tag,text,cls){const e=document.createElement(tag);if(text!==undefined
 function btn(text,action,cls='secondary'){const b=n('button',text,cls);b.type='button';b.onclick=action;return b;}
 export function mountExperience(api){
  const {getUnits,getCards,getState}=api;
- document.querySelector('.version').textContent='新版 4.1 · 2026.10.06';
+ document.querySelector('.version').textContent='日曆新版 5.0 · 2026.10.13';
  const header=document.querySelector('main header');header.append(n('span','資料載入中','data-pill'));const pill=header.lastElementChild;
  const welcome=n('section',undefined,'setup-banner');welcome.hidden=true;welcome.append(n('div','先匯入知識資料包，就能開始搜尋、卡片與題庫。'),btn('匯入資料',()=>{api.go('settings');$('knowledge-file').click();},'primary'));document.querySelector('.heading').after(welcome);
  // Visible topic folders, with pagination rather than thousands of rows.
@@ -50,3 +50,4 @@ export function mountExperience(api){
  function progress(){const now=new Date().toISOString(),due=getCards().filter(u=>!getState().reviewDue[u.id]||getState().reviewDue[u.id].due<=now).length;const known=Object.values(getState().mastery).filter(x=>x==='known').length;$('study-progress').textContent=`${getCards().length.toLocaleString()} 張可學習 · ${due.toLocaleString()} 張未學／到期 · ${known} 張已掌握`;}
  document.addEventListener('college-knowledge-changed',refresh);document.addEventListener('college-saved',()=>{progress();drawWrongAnalysis();$('quiz-data-summary').textContent=`已載入 ${getUnits().filter(u=>u.kind==='question').length} 道題目 · ${getState().wrong.length} 道待重練錯題 · 可依主題篩選`;});refresh();drawWrongAnalysis();
 }
+
