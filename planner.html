@@ -21,8 +21,8 @@
     </header>
     <main>
       <p class="eyebrow">先留休息，再承諾工作</p>
-      <h1>生活規劃工作台</h1>
-      <p>安排時間、記帳、做決策與記錄恢復，都在同一頁。</p>
+      <h1>生活規劃</h1>
+      <p class="page-intro">行程、任務、財務與恢復，在同一個工作區安排。</p>
       <nav>
         <button data-tab="overview" class="active" aria-pressed="true">
           排程總覽</button
@@ -32,7 +32,7 @@
         ><button data-tab="tools">計算工具</button>
       </nav>
       <p id="status" role="status"></p>
-      <details class="panel">
+      <details class="panel onboarding">
         <summary>第一次使用：四步完成一週規劃</summary>
         <ol>
           <li>到「時間與休息」填可用時段、每日工時上限與休息規則。</li>
@@ -46,96 +46,90 @@
           計時扣除的是投入時間，剩餘估時仍需你校正；投入時間不等於學會。估時歸零後仍要核對完成條件，再按「確認完成」。每次週日規劃後匯出備份。
         </p>
       </details>
-      <section id="hub-capture" class="panel">
-        <h2>快速輸入</h2>
-        <p id="hub-summary"></p>
-        <p>
-          Cmd／Ctrl＋K
-          跳到輸入欄。完整日期、方括號標題；先預覽再加入。支援同一操作新增行程與預定費用。
-        </p>
-        <label for="hub-command">指令或 JSON</label
-        ><textarea
-          id="hub-command"
-          rows="3"
-          maxlength="10000"
-          placeholder="/cal 2026-10-15 14:00-15:00 [寫報告] $150"
-        ></textarea>
-        <div class="toolbar">
-          <button id="command-preview" type="button">預覽資料</button
-          ><button id="command-apply" type="button" disabled>確認加入</button
-          ><button data-hub-jump="overview">行程</button
-          ><button data-hub-jump="finance-hub">財務</button
-          ><button data-hub-jump="decision-hub">決策</button
-          ><button data-hub-jump="health-hub">活動與恢復</button>
+      <section id="overview">
+        <div class="schedule-toolbar">
+          <div class="range-controls">
+            <button id="previous-period" type="button" aria-label="上一個週期">‹</button>
+            <select id="period" aria-label="規劃範圍">
+              <option value="day">日</option>
+              <option value="week">週計畫</option>
+              <option value="month">月計畫</option>
+              <option value="quarter">季計畫</option>
+              <option value="year">年計畫</option>
+            </select>
+            <input id="anchor" type="date" aria-label="規劃日期" />
+            <button id="next-period" type="button" aria-label="下一個週期">›</button>
+            <button id="go-today" type="button">今天</button>
+          </div>
+          <div class="primary-actions">
+            <button id="replan">重新計算</button>
+            <button id="confirm-plan">確認排程</button>
+          </div>
         </div>
-        <pre id="command-result" aria-live="polite"></pre>
-        <p id="hub-status" role="status"></p>
-        <details>
-          <summary>可直接用的指令範例</summary>
-          <pre>
-/cal 2026-10-15 14:00-15:00 [寫報告] $150
+        <details class="panel export-tools">
+          <summary>匯出與列印</summary>
+          <div class="toolbar">
+            <label>匯出版本<select id="export-plan-source">
+              <option value="suggested">目前建議</option>
+              <option value="confirmed">已確認快照</option>
+            </select></label>
+            <label><input id="export-fixed" type="checkbox" checked />含固定行程</label>
+            <button id="export-ics">匯出日曆 ICS</button>
+            <label>PDF內容<select id="print-scope">
+              <option value="schedule">行程與時間分析</option>
+              <option value="all">全部，含財務與活動</option>
+            </select></label>
+            <button id="print">列印／存成 PDF</button>
+          </div>
+        </details>
+        <p id="range"></p>
+        <div id="metrics" class="metrics"></div>
+        <div id="schedule"></div>
+        <section id="hub-capture" class="panel">
+          <h2>快速輸入</h2>
+          <p id="hub-summary"></p>
+          <p>Cmd／Ctrl＋K 跳到輸入欄。先預覽再加入；可一次排程並登記預定費用。</p>
+          <label for="hub-command">指令或 JSON</label>
+          <textarea id="hub-command" rows="1" maxlength="10000" placeholder="/cal 2026-10-15 14:00-15:00 [寫報告] $150"></textarea>
+          <div class="toolbar">
+            <button id="command-preview" type="button">預覽資料</button>
+            <button id="command-apply" type="button" disabled>確認加入</button>
+            <details class="quick-links"><summary>跳到其他功能</summary>
+              <button data-hub-jump="finance-hub">財務</button>
+              <button data-hub-jump="decision-hub">決策</button>
+              <button data-hub-jump="health-hub">活動與恢復</button>
+            </details>
+          </div>
+          <pre id="command-result" aria-live="polite"></pre>
+          <p id="hub-status" role="status"></p>
+          <details><summary>指令範例</summary>
+            <pre>/cal 2026-10-15 14:00-15:00 [寫報告] $150
 /fin -150 #餐費 [午餐]
 /fin 2026-10-20 -300 #交通 [考試交通] !預定
 /task [管理學報告] 2h -> must
 /fit 20m #walk [散步]</pre>
-          <p>
-            財務預定轉為實際後不會重複扣款。任務會加入決策區和任務收件箱；只有「正在做」自動參與排程。/fit
-            的睡眠預設0代表未填，請用表單記錄。
-          </p>
-        </details>
-      </section>
-      <section id="overview">
-        <div class="toolbar">
-          <select id="period" aria-label="規劃範圍">
-            <option value="week">週計畫</option>
-            <option value="month">月計畫</option>
-            <option value="quarter">季計畫</option>
-            <option value="year">年計畫</option></select
-          ><input id="anchor" type="date" aria-label="規劃日期" /><button
-            id="replan"
-          >
-            重新計算建議</button
-          ><label
-            >匯出版本<select id="export-plan-source">
-              <option value="suggested">目前建議</option>
-              <option value="confirmed">已確認快照</option>
-            </select></label
-          ><label
-            ><input
-              id="export-fixed"
-              type="checkbox"
-              checked
-            />含固定行程</label
-          ><button id="export-ics">匯出日曆 ICS</button
-          ><button id="confirm-plan">確認此排程</button
-          ><label
-            >PDF內容<select id="print-scope">
-              <option value="schedule">行程與時間分析</option>
-              <option value="all">全部，含財務與活動</option>
-            </select></label
-          ><button id="print">列印／存成 PDF</button>
-        </div>
-        <p id="range"></p>
-        <div id="metrics" class="metrics"></div>
-        <div class="panel">
-          <h2>排不進去的工作</h2>
-          <p>超出容量的工作保留在這裡，不占用休息。</p>
-          <div id="warnings"></div>
-        </div>
-        <div class="panel timer">
-          <h2>專注與強制休息</h2>
-          <select id="focus-task" aria-label="計時任務"></select
-          ><strong id="timer">尚未開始</strong
-          ><button id="start">開始專注</button
-          ><button id="stop">結束並記錄已用時間</button
-          ><small>專注結束後須完成休息，才能開始下一段。</small>
-        </div>
-        <details class="panel">
-          <summary>最近確認的排程</summary>
+            <p>預定支出轉為實際後不重複扣款；只有「正在做」的工作會自動排程。</p>
+          </details>
+        </section>
+        <details class="panel schedule-diagnostics">
+          <summary>容量檢查、專注計時與已確認排程</summary>
+          <div class="panel">
+            <h2>排不進去的工作</h2>
+            <p>超出容量的工作保留在這裡，不占用休息。</p>
+            <div id="warnings"></div>
+          </div>
+          <div class="panel timer">
+            <h2>專注與強制休息</h2>
+            <select id="focus-task" aria-label="計時任務"></select
+            ><strong id="timer">尚未開始</strong
+            ><button id="start">開始專注</button
+            ><button id="stop">結束並記錄已用時間</button
+            ><small>專注結束後須完成休息，才能開始下一段。</small>
+          </div>
+          <h2>最近確認的排程</h2>
           <p id="confirmed-note"></p>
           <div id="confirmed"></div>
         </details>
-        <div id="schedule"></div>
         <div class="panel">
           <h2>時間分析</h2>
           <label
@@ -279,11 +273,9 @@
         </div>
         <div class="panel">
           <h2>固定事件／保護休息</h2>
-          <button id="import-existing" type="button">
-            從原日曆讀取固定事件
-          </button>
+          <button id="import-existing" type="button">同步兩個日曆</button>
           <p>
-            只讀取課程、生活、休息與有時間的考試事件；自主讀書由新排程安排。原日曆保持原資料。
+            合併固定行程到主日曆並讀回課程、生活、休息與考試；同 ID 衝突保留主日曆版本。此操作不刪除資料，也不會發布建議讀書時段。
           </p>
           <form id="event-form">
             <label>名稱<input name="title" maxlength="120" required /></label
