@@ -285,8 +285,10 @@
             ><label
               ><input name="repeat" type="checkbox" />
               每週同一天（至本季末）</label
-            ><button>加入固定事件</button>
+            ><button id="event-submit">加入固定事件</button>
+            <button id="event-cancel-edit" type="button" hidden>取消編輯</button>
           </form>
+          <p id="event-edit-note" role="status" hidden></p>
           <p>準備和交通請包含在事件時間內。重疊事件合併扣除。</p>
           <div id="events"></div>
         </div>
