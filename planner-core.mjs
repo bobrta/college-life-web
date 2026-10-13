@@ -3,6 +3,7 @@ export {
   minutes,
   clock,
   range,
+  shiftPeriod,
   subtract,
   mergeIntervals,
   parseWindows,
