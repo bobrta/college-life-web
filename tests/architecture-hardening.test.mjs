@@ -3,11 +3,12 @@ import assert from "node:assert/strict";
 import { parseSchedule, toICS } from "../calendar.mjs";
 import { financialOverview } from "../finance.mjs";
 import { validateDecision, rankOptions, quadrant, decisionStage } from "../management.mjs";
-import { moneySummary, migrate, validateBackup } from "../life.mjs";
+import { loadSavedState, moneySummary, migrate, validateBackup } from "../life.mjs";
 import { createCloudClient } from "../cloud.mjs";
 import { summarizeWrongAnalysis } from "../quiz-analysis.mjs";
 import { validateHub } from "../規劃核心/lifestyle.mjs";
 import { loadKnowledgeFile, readLimited } from "../knowledge-loader.mjs";
+import { commitKnowledgeChange } from "../knowledge-store.mjs";
 
 const validEvent = () => ({
   id: "e1",
@@ -153,6 +154,38 @@ test("備份與分析資料保留合法高進度和特殊字串分類", () => {
   assert.equal(Object.hasOwn(safeMaps.reviewDue, "constructor"), true);
 });
 
+test("啟動時損壞的本機資料退回安全空狀態並保留修復訊息", () => {
+  const valid = loadSavedState({ tasks: {}, events: [] });
+  assert.equal(valid.blocked, false);
+  assert.equal(valid.state.schemaVersion, 2);
+  for (const corrupted of [
+    { tasks: {}, events: {} },
+    { tasks: [], events: [] },
+    { tasks: { "2026-10-13": { title: "不是清單" } } },
+    { tasks: {}, schedule: { weeks: [] } },
+  ]) {
+    const result = loadSavedState(corrupted);
+    assert.equal(result.blocked, true);
+    assert.match(result.error, /不是 College OS|備份欄位|任務格式|作息檔/);
+    assert.deepEqual(result.state.tasks, {});
+    assert.deepEqual(result.state.events, []);
+  }
+});
+
+test("財務圖表的六個月、分類與預算合計不會靜默超過安全整數", () => {
+  const value = Number.MAX_SAFE_INTEGER;
+  const row = (id, type, category = "餐費") => ({ id, date: "2026-10-13", type, cents: value, category });
+  assert.throws(() => financialOverview([row("a", "income"), row("b", "income")], "2026-10"), /安全範圍/);
+  assert.throws(() => financialOverview([row("a", "expense"), row("b", "expense")], "2026-10"), /安全範圍/);
+  assert.throws(() => financialOverview([row("a", "expense", "甲"), row("b", "expense", "乙")], "2026-10"), /安全範圍/);
+});
+
+test("備份拒絕錯誤的活動清單與排程結構，避免啟動時才崩潰", () => {
+  assert.throws(() => validateBackup(JSON.stringify({ tasks: {}, events: {} })), /events/);
+  assert.throws(() => validateBackup(JSON.stringify({ tasks: {}, schedule: { weeks: [] } })), /events/);
+  assert.doesNotThrow(() => validateBackup(JSON.stringify({ tasks: {}, schedule: { events: [], weeks: [] }, events: [] })));
+});
+
 test("決策圖拒絕越界評分並安全處理不完整任務狀態", () => {
   assert.throws(() => quadrant(0, 5));
   assert.throws(() => quadrant(4, 5.5));
@@ -177,6 +210,27 @@ test("知識資料串流有大小上限且 gzip 內容可正常讀取", async ()
   assert.deepEqual(loaded, [{ id: "unit-1" }, { id: "unit-2" }]);
 });
 
+test("知識包寫入與主資料保存採同一交易語意，失敗時回復兩邊", async () => {
+  let stored = ["舊資料"], state = stored, commits = 0;
+  await assert.rejects(commitKnowledgeChange({
+    write: async value => { stored = structuredClone(value); },
+    previous: ["舊資料"],
+    next: ["新資料"],
+    commit: () => { commits++; return false; },
+    rollback: () => { state = ["舊資料"]; },
+  }), /本機紀錄未保存/);
+  assert.deepEqual(stored, ["舊資料"]);
+  assert.deepEqual(state, ["舊資料"]);
+  assert.equal(commits, 1);
+
+  let called = false;
+  await assert.rejects(commitKnowledgeChange({
+    write: async () => { throw Error("quota"); },
+    previous: [], next: ["新資料"], commit: () => { called = true; return true; },
+  }), /quota/);
+  assert.equal(called, false);
+});
+
 test("密碼重設無法驗證服務端身份時不安裝工作階段", async () => {
   const stored = new Map();
   const client = createCloudClient({ enabled: true, url: "https://example.invalid", publishableKey: "public" }, async () => ({ ok: false, status: 401 }), { setItem: (k, v) => stored.set(k, v), getItem: k => stored.get(k), removeItem: k => stored.delete(k) });
@@ -184,6 +238,27 @@ test("密碼重設無法驗證服務端身份時不安裝工作階段", async ()
   assert.equal(stored.size, 0);
   await assert.rejects(client.recoverFromHash("#access_token=bad&refresh_token=bad&expires_at=nope"), /期限格式/);
   await assert.rejects(client.recoverFromHash("#access_token=bad&refresh_token=bad&expires_in=0"), /期限格式/);
+  assert.equal(stored.size, 0);
+});
+
+test("雲端暫時離線不會刪除可恢復的更新權杖", async () => {
+  const url = "https://example.invalid", stored = new Map();
+  const key = "college-os-session-" + btoa(url).replace(/[^a-z\d]/gi, "").slice(0, 24);
+  stored.set(key, JSON.stringify({ access_token: "expired", refresh_token: "keep", expires_at: 1, user: { id: "u1" } }));
+  const client = createCloudClient({ enabled: true, url, publishableKey: "public" }, async (_url, options) => {
+    assert.ok(options.signal instanceof AbortSignal);
+    throw Error("offline");
+  }, { setItem: (k, v) => stored.set(k, v), getItem: k => stored.get(k), removeItem: k => stored.delete(k) });
+  await assert.rejects(client.restoreSession(), /offline/);
+  assert.equal(JSON.parse(stored.get(key)).refresh_token, "keep");
+});
+
+test("雲端登入不得把明確的零秒或非法期限視為永不過期", async () => {
+  const stored = new Map();
+  const client = createCloudClient({ enabled: true, url: "https://example.invalid", publishableKey: "public" }, async () => ({
+    ok: true, status: 200, json: async () => ({ access_token: "a", refresh_token: "r", expires_in: 0, user: { id: "u1" } }),
+  }), { setItem: (k, v) => stored.set(k, v), getItem: k => stored.get(k), removeItem: k => stored.delete(k) });
+  await assert.rejects(client.signIn("a@example.com", "password"), /期限/);
   assert.equal(stored.size, 0);
 });
 

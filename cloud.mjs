@@ -11,19 +11,22 @@ export function createCloudClient(config,request=fetch,storage=globalThis.localS
  const persist=()=>{try{if(session)storage?.setItem(sessionKey,JSON.stringify(session));else storage?.removeItem(sessionKey);}catch{}};
  const headers=extra=>({'apikey':key,Authorization:'Bearer '+(session?.access_token??key),...(extra??{})});
  async function call(path,options={},binary=false){
-  const response=await request(url+path,{method:'GET',...options,headers:headers(options.headers)});
-  if(!response.ok){let body={};try{body=await response.json();}catch{}throw Error(body.message??body.msg??body.error_description??'服務錯誤 ('+response.status+')');}
-  if(response.status===204)return null;
-  if(binary){const size=Number(response.headers?.get?.('content-length'));if(Number.isFinite(size)&&size>20e6)throw Error('雲端知識包超過 20 MB。');return readBounded(response.body,20e6,'雲端知識包');}
-  return response.json();
+  const controller=typeof AbortController==='function'?new AbortController():null,timer=controller?setTimeout(()=>controller.abort(),30_000):null;
+  try{
+   const response=await request(url+path,{method:'GET',...options,...(controller?{signal:controller.signal}:{}),headers:headers(options.headers)});
+   if(!response.ok){let body={};try{body=await response.json();}catch{}const error=Error(body.message??body.msg??body.error_description??'服務錯誤 ('+response.status+')');error.status=response.status;throw error;}
+   if(response.status===204)return null;
+   if(binary){const size=Number(response.headers?.get?.('content-length'));if(Number.isFinite(size)&&size>20e6)throw Error('雲端知識包超過 20 MB。');return await readBounded(response.body,20e6,'雲端知識包');}
+   return await response.json();
+  }finally{if(timer!==null)clearTimeout(timer);}
  }
- const installSession=data=>{if(!data||typeof data.access_token!=='string'||!data.access_token||typeof data.refresh_token!=='string'||!data.refresh_token||!data.user||typeof data.user.id!=='string'||!data.user.id)throw Error('登入回應缺少有效的帳號或工作階段。');const expires=Number(data.expires_at??(data.expires_in?Date.now()/1000+Number(data.expires_in):0));if(!Number.isFinite(expires)||expires<0)throw Error('登入工作階段期限不正確。');session={access_token:data.access_token,refresh_token:data.refresh_token,expires_at:expires||null,token_type:typeof data.token_type==='string'?data.token_type:'bearer',user:data.user};persist();return data.user;};
+ const installSession=data=>{if(!data||typeof data.access_token!=='string'||!data.access_token||typeof data.refresh_token!=='string'||!data.refresh_token||!data.user||typeof data.user.id!=='string'||!data.user.id)throw Error('登入回應缺少有效的帳號或工作階段。');let expires=null;if(data.expires_at!==undefined){expires=Number(data.expires_at);if(!Number.isSafeInteger(expires)||expires<=0)throw Error('登入工作階段期限不正確。');}else if(data.expires_in!==undefined){const lifetime=Number(data.expires_in);if(!Number.isSafeInteger(lifetime)||lifetime<=0)throw Error('登入工作階段期限不正確。');expires=Math.floor(Date.now()/1000)+lifetime;if(!Number.isSafeInteger(expires))throw Error('登入工作階段期限不正確。');}session={access_token:data.access_token,refresh_token:data.refresh_token,expires_at:expires,token_type:typeof data.token_type==='string'?data.token_type:'bearer',user:data.user};persist();return data.user;};
  async function ensureSession(){
   if(session?.access_token&&(session.expires_at==null||session.expires_at>Date.now()/1000+45))return session;
   if(!session){try{session=JSON.parse(storage?.getItem(sessionKey)??'null');}catch{session=null;}if(!validSession(session)){session=null;persist();}}
   if(!session?.refresh_token)throw Error('請先登入。');
   try{installSession(await call('/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token})}));return session;}
-  catch(error){session=null;persist();throw error;}
+  catch(error){if([400,401,403].includes(error?.status)){session=null;persist();}throw error;}
  }
  async function auth(path,body){return call('/auth/v1/'+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
  async function rpc(name,body){return call('/rest/v1/rpc/'+name,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}

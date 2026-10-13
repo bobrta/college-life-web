@@ -50,4 +50,3 @@ export function mountExperience(api){
  function progress(){const now=new Date().toISOString(),due=getCards().filter(u=>!getState().reviewDue[u.id]||getState().reviewDue[u.id].due<=now).length;const known=Object.values(getState().mastery).filter(x=>x==='known').length;$('study-progress').textContent=`${getCards().length.toLocaleString()} 張可學習 · ${due.toLocaleString()} 張未學／到期 · ${known} 張已掌握`;}
  document.addEventListener('college-knowledge-changed',refresh);document.addEventListener('college-saved',()=>{progress();drawWrongAnalysis();$('quiz-data-summary').textContent=`已載入 ${getUnits().filter(u=>u.kind==='question').length} 道題目 · ${getState().wrong.length} 道待重練錯題 · 可依主題篩選`;});refresh();drawWrongAnalysis();
 }
-
