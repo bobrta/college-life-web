@@ -302,13 +302,89 @@ test("日視圖與日期前後按鈕可切換且顯示固定行程", async () =>
 test("週視圖保留完整七天並標記已過日期", async () => {
   const ui = await loadUI("week-seven-days");
   ui.$("period").value = "week";
-  ui.$("anchor").value = "2026-10-13";
+  ui.$("anchor").value = "2000-01-04";
   ui.$("period").onchange();
   const days = [...ui.$("schedule").querySelectorAll(".day")];
   assert.equal(days.length, 7);
-  assert.equal(days[0].querySelector("h3").textContent, "2026-10-12");
+  assert.equal(days[0].querySelector("h3").textContent, "2000-01-03");
   assert.match(days[0].textContent, /已過日期/);
-  assert.equal(days[1].querySelector("h3").textContent, "2026-10-13");
+  assert.equal(days[1].querySelector("h3").textContent, "2000-01-04");
+});
+test("點週曆日期可查看過去固定行程，點行程可編輯", async () => {
+  const ui = await loadUI("calendar-drilldown");
+  command(ui, "/cal 2000-01-03 14:00-15:00 [過去行程]");
+  ui.$("anchor").value = "2000-01-03";
+  ui.$("period").value = "week";
+  ui.$("period").onchange();
+  ui.$("schedule").querySelector(".calendar-date").onclick();
+  assert.equal(ui.$("period").value, "day");
+  assert.match(ui.$("schedule").textContent, /過去行程/);
+  ui.$("schedule").querySelector(".event-open").onclick();
+  assert.equal(ui.$("event-form").elements.title.value, "過去行程");
+  assert.equal(ui.$("event-cancel-edit").hidden, false);
+});
+test("修改行程保留 ID、備註和關聯費用，取消編輯不寫入", async () => {
+  const ui = await loadUI("calendar-edit-linked");
+  command(ui, "/cal 2026-10-15 14:00-15:00 [報告] $150");
+  const original = ui.read();
+  original.events[0].notes = "準備資料";
+  await ui.$("restore").onchange({target: {files: [{size: 100, text: async () => JSON.stringify(original)}], value: "file"}});
+  const edit = () => [...ui.$("events").querySelectorAll("button")].find(b => b.textContent === "編輯事件").onclick();
+  edit();
+  const form = ui.$("event-form").elements;
+  form.title.value = "報告練習";
+  form.start.value = "16:00";
+  form.end.value = "17:00";
+  ui.submit("event-form");
+  const updated = ui.read();
+  assert.equal(updated.events.length, 1);
+  assert.equal(updated.events[0].id, original.events[0].id);
+  assert.equal(updated.events[0].title, "報告練習");
+  assert.equal(updated.events[0].notes, "準備資料");
+  assert.equal(updated.hub.transactions[0].eventId, original.events[0].id);
+  edit();
+  form.title.value = "未保存草稿";
+  ui.$("replan").onclick();
+  assert.equal(form.title.value, "未保存草稿");
+  ui.$("event-cancel-edit").onclick();
+  assert.deepEqual(ui.read(), updated);
+  ui.$("undo").onclick();
+  assert.equal(ui.read().events[0].title, "報告");
+});
+test("編輯每週系列保留日期範圍、排除日期與單次覆寫", async () => {
+  const ui = await loadUI("calendar-edit-series");
+  command(ui, "/cal 2026-10-15 14:00-15:00 [補課]");
+  const snapshot = ui.read();
+  const event = snapshot.events[0];
+  delete event.date;
+  Object.assign(event, {weekday: 4, from: "2026-10-01", until: "2027-01-28", excludedDates: ["2026-10-22"], overrides: {"2026-10-29": {start: "13:00", end: "14:00"}}});
+  await ui.$("restore").onchange({target: {files: [{size: 100, text: async () => JSON.stringify(snapshot)}], value: "file"}});
+  ui.$("period").value = "day";
+  ui.$("anchor").value = "2026-10-15";
+  ui.$("period").onchange();
+  ui.$("schedule").querySelector(".event-open").onclick();
+  assert.match(ui.$("event-edit-note").textContent, /整個每週系列/);
+  const form = ui.$("event-form").elements;
+  assert.equal(form.repeat.disabled, true);
+  assert.equal(form.date.readOnly, true);
+  form.title.value = "微積分補課";
+  form.start.value = "16:00";
+  form.end.value = "17:00";
+  ui.submit("event-form");
+  assert.deepEqual(ui.read().events[0], {...event, title: "微積分補課", start: "16:00", end: "17:00"});
+});
+test("拒絕切換行程時保留未保存草稿", async () => {
+  const ui = await loadUI("calendar-edit-draft");
+  command(ui, "/cal 2026-10-15 14:00-15:00 [原行程]");
+  ui.$("event-form").elements.title.value = "新行程草稿";
+  const originalConfirm = globalThis.confirm;
+  try {
+    globalThis.confirm = () => false;
+    [...ui.$("events").querySelectorAll("button")].find(b => b.textContent === "編輯事件").onclick();
+    assert.equal(ui.$("event-form").elements.title.value, "新行程草稿");
+    assert.equal(ui.$("event-cancel-edit").hidden, true);
+    assert.equal(ui.read().events[0].title, "原行程");
+  } finally { globalThis.confirm = originalConfirm; }
 });
 test("固定行程同步雙向合併並保留主日曆其他資料", async () => {
   const ui = await loadUI("calendar-safe-sync");
