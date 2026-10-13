@@ -2,6 +2,7 @@ import { mountLifestyle } from "./規劃介面/lifestyle.mjs";
 import {
   plan,
   range,
+  shiftPeriod,
   clock,
   pert,
   validate,
@@ -11,6 +12,7 @@ import { parseSchedule, toICS, eventsOn } from "./calendar.mjs";
 import { createPlannerStore } from "./規劃核心/store.mjs";
 import { beginFocus, finishFocus, advanceTimer } from "./規劃核心/timer.mjs";
 import { renderSchedule } from "./規劃介面/schedule.mjs";
+import { mergeCalendarEvents } from "./規劃核心/calendar-bridge.mjs";
 const $ = (id) => document.getElementById(id),
   key = "college-capacity-planner-v1",
   today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" }),
@@ -164,6 +166,7 @@ function render() {
   renderSchedule($("schedule"), p, {
     period: $("period").value,
     limit: state.settings.limit,
+    eventsOnDate: (date) => eventsOn(state.events, date),
     onFocus: (id) => {
       $("focus-task").value = id;
       $("start").onclick();
@@ -367,6 +370,26 @@ $("event-form").onsubmit = safe((e) => {
   e.target.elements.date.value = today;
 });
 for (const id of ["period", "anchor"]) $(id).onchange = safe(render);
+$("previous-period").onclick = safe(() => {
+  $("anchor").value = shiftPeriod(
+    $("anchor").value || today,
+    $("period").value,
+    -1,
+  );
+  render();
+});
+$("next-period").onclick = safe(() => {
+  $("anchor").value = shiftPeriod(
+    $("anchor").value || today,
+    $("period").value,
+    1,
+  );
+  render();
+});
+$("go-today").onclick = safe(() => {
+  $("anchor").value = today;
+  render();
+});
 $("replan").onclick = safe(render);
 $("print").onclick = () => {
   document.body.classList.toggle(
@@ -490,28 +513,39 @@ $("cancel-edit").onclick = () => {
   render();
 };
 $("import-existing").onclick = safe(() => {
-  const old = JSON.parse(localStorage.getItem("college-os-v1") || "{}");
-  const events = parseSchedule(
-    JSON.stringify({
-      events: (old.events || []).filter(
-        (e) => e.category !== "study" && e.start && e.end,
-      ),
-    }),
-  ).events;
-  if (!events.length) throw Error("此瀏覽器沒有可讀取的原日曆固定事件");
-  const map = new Map(state.events.map((e) => [e.id, e]));
-  let added = 0;
-  for (const e of events)
-    if (!map.has(e.id)) {
-      map.set(e.id, e);
-      added++;
-    }
-  const next = { ...state, events: [...map.values()] };
+  const raw = localStorage.getItem("college-os-v1");
+  let old = {};
+  if (raw) {
+    try { old = JSON.parse(raw); }
+    catch { throw Error("主日曆資料無法解析；未修改任何資料。"); }
+    if (
+      !old ||
+      typeof old !== "object" ||
+      Array.isArray(old) ||
+      !Array.isArray(old.events ?? [])
+    )
+      throw Error("主日曆資料格式不正確；未修改任何資料。");
+  }
+  const result = mergeCalendarEvents(old.events || [], state.events);
+  const normalized = parseSchedule(JSON.stringify({
+    events: result.events.map((e) =>
+      e.status === "personal" ? { ...e, status: "confirmed" } : e,
+    ),
+  })).events;
+  const events = normalized.filter(
+    (e) => e.category !== "study" && e.start && e.end,
+  );
+  const next = { ...state, events };
   validate(next);
+  // Calendar sync is additive. Keep every unrelated main-app field intact.
+  localStorage.setItem(
+    "college-os-v1",
+    JSON.stringify({ ...old, events: result.events }),
+  );
   state = next;
   save();
   render();
-  $("status").textContent = `已讀取 ${added} 個固定事件；重複ID保留目前版本。`;
+  $("status").textContent = `日曆已合併：新增 ${result.added} 個事件，${result.conflicts} 個同 ID 衝突保留主日曆版本。`;
 });
 $("confirm-plan").onclick = safe(() => {
   const p = currentPlan();
