@@ -166,6 +166,7 @@ function render() {
   renderSchedule($("schedule"), p, {
     period: $("period").value,
     limit: state.settings.limit,
+    displayDates: $("period").value === "week" ? dates : [],
     eventsOnDate: (date) => eventsOn(state.events, date),
     onFocus: (id) => {
       $("focus-task").value = id;
