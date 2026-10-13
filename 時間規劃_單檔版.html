@@ -32,9 +32,9 @@ a {
   color: #28685a;
 }
 main {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: auto;
-  padding: 36px 24px;
+  padding: 22px 28px 56px;
 }
 h1 {
   font-size: clamp(28px, 4vw, 46px);
@@ -52,6 +52,7 @@ p {
   letter-spacing: 3px;
   color: #35735e;
 }
+.page-intro { margin-top: 0; }
 button,
 .button {
   border: 1px solid #cddbd0;
@@ -76,6 +77,35 @@ nav,
   flex-wrap: wrap;
   margin: 24px 0;
 }
+nav { margin: 14px 0; }
+.schedule-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #e0e5de;
+  border-radius: 14px;
+  background: rgb(250 251 249 / 94%);
+  backdrop-filter: blur(14px);
+}
+.range-controls, .primary-actions { display: flex; align-items: center; gap: 8px; }
+.range-controls button { min-width: 40px; }
+.range-controls select { min-width: 112px; }
+.primary-actions button:last-child { background: #285d4b; color: white; border-color: #285d4b; }
+.export-tools { padding: 12px 16px; margin: 10px 0; }
+.export-tools .toolbar { margin: 12px 0 0; align-items: end; }
+.onboarding { padding: 12px 16px; margin: 12px 0; }
+#hub-capture { padding: 18px 20px; margin: 16px 0; }
+#hub-capture h2 { margin: 0; }
+#hub-capture > p { margin: 6px 0; }
+#hub-capture .toolbar { margin: 10px 0; }
+#hub-command { min-height: 44px; resize: vertical; }
 .panel {
   padding: 24px;
   background: white;
@@ -133,6 +163,45 @@ form,
   border-top: 1px solid #e2e8e0;
   padding: 15px 0;
 }
+#schedule.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 14px;
+}
+#schedule.week-grid > .day.panel {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+#schedule.week-grid .day h3 { font-size: 14px; }
+#schedule.week-grid .block { display: block; padding: 8px; font-size: 12px; }
+#schedule.week-grid .block button { margin-top: 6px; }
+.fixed-event { border-left-color: #9aa89e; background: #f1f3f0; color: #526159; }
+.calendar-date,
+#schedule .block .event-open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.calendar-date { font-weight: 700; }
+#schedule .event-open { width: 100%; overflow-wrap: anywhere; }
+.calendar-date:hover, #schedule .event-open:hover { text-decoration: underline; }
+.calendar-date:focus-visible, #schedule .event-open:focus-visible {
+  outline: 2px solid #2b6752;
+  outline-offset: 4px;
+}
+.schedule-diagnostics { margin-top: 20px; }
+.schedule-diagnostics > .panel { margin: 12px 0; }
 .day h3 {
   margin: 4px 0 12px;
 }
@@ -195,6 +264,18 @@ form,
   .panel {
     padding: 18px;
   }
+}
+@media (max-width: 1100px) {
+  #schedule.week-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .schedule-toolbar { position: static; }
+  #schedule.week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .range-controls { width: 100%; flex-wrap: wrap; }
+  .range-controls input { flex: 1; }
+}
+@media (max-width: 420px) {
+  #schedule.week-grid { grid-template-columns: 1fr; }
 }
 @media print {
   header,
@@ -477,8 +558,8 @@ button[data-tab].active {
     </header>
     <main>
       <p class="eyebrow">先留休息，再承諾工作</p>
-      <h1>生活規劃工作台</h1>
-      <p>安排時間、記帳、做決策與記錄恢復，都在同一頁。</p>
+      <h1>生活規劃</h1>
+      <p class="page-intro">行程、任務、財務與恢復，在同一個工作區安排。</p>
       <nav>
         <button data-tab="overview" class="active" aria-pressed="true">
           排程總覽</button
@@ -488,7 +569,7 @@ button[data-tab].active {
         ><button data-tab="tools">計算工具</button>
       </nav>
       <p id="status" role="status"></p>
-      <details class="panel">
+      <details class="panel onboarding">
         <summary>第一次使用：四步完成一週規劃</summary>
         <ol>
           <li>到「時間與休息」填可用時段、每日工時上限與休息規則。</li>
@@ -502,96 +583,90 @@ button[data-tab].active {
           計時扣除的是投入時間，剩餘估時仍需你校正；投入時間不等於學會。估時歸零後仍要核對完成條件，再按「確認完成」。每次週日規劃後匯出備份。
         </p>
       </details>
-      <section id="hub-capture" class="panel">
-        <h2>快速輸入</h2>
-        <p id="hub-summary"></p>
-        <p>
-          Cmd／Ctrl＋K
-          跳到輸入欄。完整日期、方括號標題；先預覽再加入。支援同一操作新增行程與預定費用。
-        </p>
-        <label for="hub-command">指令或 JSON</label
-        ><textarea
-          id="hub-command"
-          rows="3"
-          maxlength="10000"
-          placeholder="/cal 2026-10-15 14:00-15:00 [寫報告] $150"
-        ></textarea>
-        <div class="toolbar">
-          <button id="command-preview" type="button">預覽資料</button
-          ><button id="command-apply" type="button" disabled>確認加入</button
-          ><button data-hub-jump="overview">行程</button
-          ><button data-hub-jump="finance-hub">財務</button
-          ><button data-hub-jump="decision-hub">決策</button
-          ><button data-hub-jump="health-hub">活動與恢復</button>
+      <section id="overview">
+        <div class="schedule-toolbar">
+          <div class="range-controls">
+            <button id="previous-period" type="button" aria-label="上一個週期">‹</button>
+            <select id="period" aria-label="規劃範圍">
+              <option value="day">日</option>
+              <option value="week">週計畫</option>
+              <option value="month">月計畫</option>
+              <option value="quarter">季計畫</option>
+              <option value="year">年計畫</option>
+            </select>
+            <input id="anchor" type="date" aria-label="規劃日期" />
+            <button id="next-period" type="button" aria-label="下一個週期">›</button>
+            <button id="go-today" type="button">今天</button>
+          </div>
+          <div class="primary-actions">
+            <button id="replan">重新計算</button>
+            <button id="confirm-plan">確認排程</button>
+          </div>
         </div>
-        <pre id="command-result" aria-live="polite"></pre>
-        <p id="hub-status" role="status"></p>
-        <details>
-          <summary>可直接用的指令範例</summary>
-          <pre>
-/cal 2026-10-15 14:00-15:00 [寫報告] $150
+        <details class="panel export-tools">
+          <summary>匯出與列印</summary>
+          <div class="toolbar">
+            <label>匯出版本<select id="export-plan-source">
+              <option value="suggested">目前建議</option>
+              <option value="confirmed">已確認快照</option>
+            </select></label>
+            <label><input id="export-fixed" type="checkbox" checked />含固定行程</label>
+            <button id="export-ics">匯出日曆 ICS</button>
+            <label>PDF內容<select id="print-scope">
+              <option value="schedule">行程與時間分析</option>
+              <option value="all">全部，含財務與活動</option>
+            </select></label>
+            <button id="print">列印／存成 PDF</button>
+          </div>
+        </details>
+        <p id="range"></p>
+        <div id="metrics" class="metrics"></div>
+        <div id="schedule"></div>
+        <section id="hub-capture" class="panel">
+          <h2>快速輸入</h2>
+          <p id="hub-summary"></p>
+          <p>Cmd／Ctrl＋K 跳到輸入欄。先預覽再加入；可一次排程並登記預定費用。</p>
+          <label for="hub-command">指令或 JSON</label>
+          <textarea id="hub-command" rows="1" maxlength="10000" placeholder="/cal 2026-10-15 14:00-15:00 [寫報告] $150"></textarea>
+          <div class="toolbar">
+            <button id="command-preview" type="button">預覽資料</button>
+            <button id="command-apply" type="button" disabled>確認加入</button>
+            <details class="quick-links"><summary>跳到其他功能</summary>
+              <button data-hub-jump="finance-hub">財務</button>
+              <button data-hub-jump="decision-hub">決策</button>
+              <button data-hub-jump="health-hub">活動與恢復</button>
+            </details>
+          </div>
+          <pre id="command-result" aria-live="polite"></pre>
+          <p id="hub-status" role="status"></p>
+          <details><summary>指令範例</summary>
+            <pre>/cal 2026-10-15 14:00-15:00 [寫報告] $150
 /fin -150 #餐費 [午餐]
 /fin 2026-10-20 -300 #交通 [考試交通] !預定
 /task [管理學報告] 2h -> must
 /fit 20m #walk [散步]</pre>
-          <p>
-            財務預定轉為實際後不會重複扣款。任務會加入決策區和任務收件箱；只有「正在做」自動參與排程。/fit
-            的睡眠預設0代表未填，請用表單記錄。
-          </p>
-        </details>
-      </section>
-      <section id="overview">
-        <div class="toolbar">
-          <select id="period" aria-label="規劃範圍">
-            <option value="week">週計畫</option>
-            <option value="month">月計畫</option>
-            <option value="quarter">季計畫</option>
-            <option value="year">年計畫</option></select
-          ><input id="anchor" type="date" aria-label="規劃日期" /><button
-            id="replan"
-          >
-            重新計算建議</button
-          ><label
-            >匯出版本<select id="export-plan-source">
-              <option value="suggested">目前建議</option>
-              <option value="confirmed">已確認快照</option>
-            </select></label
-          ><label
-            ><input
-              id="export-fixed"
-              type="checkbox"
-              checked
-            />含固定行程</label
-          ><button id="export-ics">匯出日曆 ICS</button
-          ><button id="confirm-plan">確認此排程</button
-          ><label
-            >PDF內容<select id="print-scope">
-              <option value="schedule">行程與時間分析</option>
-              <option value="all">全部，含財務與活動</option>
-            </select></label
-          ><button id="print">列印／存成 PDF</button>
-        </div>
-        <p id="range"></p>
-        <div id="metrics" class="metrics"></div>
-        <div class="panel">
-          <h2>排不進去的工作</h2>
-          <p>超出容量的工作保留在這裡，不占用休息。</p>
-          <div id="warnings"></div>
-        </div>
-        <div class="panel timer">
-          <h2>專注與強制休息</h2>
-          <select id="focus-task" aria-label="計時任務"></select
-          ><strong id="timer">尚未開始</strong
-          ><button id="start">開始專注</button
-          ><button id="stop">結束並記錄已用時間</button
-          ><small>專注結束後須完成休息，才能開始下一段。</small>
-        </div>
-        <details class="panel">
-          <summary>最近確認的排程</summary>
+            <p>預定支出轉為實際後不重複扣款；只有「正在做」的工作會自動排程。</p>
+          </details>
+        </section>
+        <details class="panel schedule-diagnostics">
+          <summary>容量檢查、專注計時與已確認排程</summary>
+          <div class="panel">
+            <h2>排不進去的工作</h2>
+            <p>超出容量的工作保留在這裡，不占用休息。</p>
+            <div id="warnings"></div>
+          </div>
+          <div class="panel timer">
+            <h2>專注與強制休息</h2>
+            <select id="focus-task" aria-label="計時任務"></select
+            ><strong id="timer">尚未開始</strong
+            ><button id="start">開始專注</button
+            ><button id="stop">結束並記錄已用時間</button
+            ><small>專注結束後須完成休息，才能開始下一段。</small>
+          </div>
+          <h2>最近確認的排程</h2>
           <p id="confirmed-note"></p>
           <div id="confirmed"></div>
         </details>
-        <div id="schedule"></div>
         <div class="panel">
           <h2>時間分析</h2>
           <label
@@ -735,11 +810,9 @@ button[data-tab].active {
         </div>
         <div class="panel">
           <h2>固定事件／保護休息</h2>
-          <button id="import-existing" type="button">
-            從原日曆讀取固定事件
-          </button>
+          <button id="import-existing" type="button">同步兩個日曆</button>
           <p>
-            只讀取課程、生活、休息與有時間的考試事件；自主讀書由新排程安排。原日曆保持原資料。
+            合併固定行程到主日曆並讀回課程、生活、休息與考試；同 ID 衝突保留主日曆版本。此操作不刪除資料，也不會發布建議讀書時段。
           </p>
           <form id="event-form">
             <label>名稱<input name="title" maxlength="120" required /></label
@@ -749,8 +822,10 @@ button[data-tab].active {
             ><label
               ><input name="repeat" type="checkbox" />
               每週同一天（至本季末）</label
-            ><button>加入固定事件</button>
+            ><button id="event-submit">加入固定事件</button>
+            <button id="event-cancel-edit" type="button" hidden>取消編輯</button>
           </form>
+          <p id="event-edit-note" role="status" hidden></p>
           <p>準備和交通請包含在事件時間內。重疊事件合併扣除。</p>
           <div id="events"></div>
         </div>
@@ -2259,10 +2334,11 @@ function clock(n) {
 function range(anchor, period) {
   if (
     !validPlannerDate(anchor) ||
-    !["week", "month", "quarter", "year"].includes(period)
+    !["day", "week", "month", "quarter", "year"].includes(period)
   )
     throw Error("規劃日期或週期不正確");
   const d = new Date(anchor + "T12:00:00Z");
+  if (period === "day") return [anchor];
   if (period === "week")
     d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
   else d.setUTCDate(1);
@@ -2279,6 +2355,28 @@ function range(anchor, period) {
   for (; d < end; d.setUTCDate(d.getUTCDate() + 1))
     out.push(d.toISOString().slice(0, 10));
   return out;
+}
+function shiftPeriod(anchor, period, amount) {
+  if (
+    !validPlannerDate(anchor) ||
+    !["day", "week", "month", "quarter", "year"].includes(period) ||
+    !Number.isInteger(amount)
+  )
+    throw Error("日期移動參數不正確");
+  const date = new Date(anchor + "T12:00:00Z");
+  const day = date.getUTCDate();
+  if (period === "day") date.setUTCDate(day + amount);
+  else if (period === "week") date.setUTCDate(day + amount * 7);
+  else {
+    const months = period === "month" ? 1 : period === "quarter" ? 3 : 12;
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() + amount * months);
+    const last = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    date.setUTCDate(Math.min(day, last));
+  }
+  return date.toISOString().slice(0, 10);
 }
 function subtract(start, end, blocks) {
   if (
@@ -2344,7 +2442,7 @@ function parseWindows(text) {
   });
 }
 
-return {minutes,clock,range,subtract,mergeIntervals,parseWindows};
+return {minutes,clock,range,shiftPeriod,subtract,mergeIntervals,parseWindows};
 })();
 __modules[4]=(()=>{
 function pert(o, m, p) {
@@ -2842,7 +2940,7 @@ __modules[9]=(()=>{
 
 
 
-return {minutes:__modules[3].minutes,clock:__modules[3].clock,range:__modules[3].range,subtract:__modules[3].subtract,mergeIntervals:__modules[3].mergeIntervals,parseWindows:__modules[3].parseWindows,pert:__modules[4].pert,capacity:__modules[7].capacity,plan:__modules[8].plan,validate:__modules[2].validate};
+return {minutes:__modules[3].minutes,clock:__modules[3].clock,range:__modules[3].range,shiftPeriod:__modules[3].shiftPeriod,subtract:__modules[3].subtract,mergeIntervals:__modules[3].mergeIntervals,parseWindows:__modules[3].parseWindows,pert:__modules[4].pert,capacity:__modules[7].capacity,plan:__modules[8].plan,validate:__modules[2].validate};
 })();
 __modules[10]=(()=>{
 const {validate}=__modules[2];
@@ -3006,7 +3104,11 @@ return {beginFocus,finishFocus,advanceTimer};
 })();
 __modules[12]=(()=>{
 const {clock,range}=__modules[3];
-function renderSchedule(container, result, { period, limit, onFocus }) {
+function renderSchedule(
+  container,
+  result,
+  { period, limit, onFocus, onSelectDate, onEditEvent, eventsOnDate = () => [], displayDates = [] },
+) {
   const doc = container.ownerDocument;
   const make = (tag, text, cls) => {
     const e = doc.createElement(tag);
@@ -3016,14 +3118,37 @@ function renderSchedule(container, result, { period, limit, onFocus }) {
   };
   const h = (n) => (n / 60).toFixed(1) + "h";
   function dayCard(day) {
-    const article = make("article", undefined, "day");
+    const article = make("article", undefined, day.past ? "day past-day" : "day");
+    const heading = make("h3");
+    if (onSelectDate && period === "week") {
+      const dateButton = make("button", day.date, "calendar-date");
+      dateButton.type = "button";
+      dateButton.setAttribute("aria-label", `查看 ${day.date} 日程`);
+      dateButton.onclick = () => onSelectDate(day.date);
+      heading.append(dateButton);
+    } else heading.textContent = day.date;
+    article.append(heading);
     article.append(
-      make("h3", day.date),
       make(
         "p",
-        `已排 ${h(day.used)} / 可排 ${h(day.budget)} · ${day.ids.size}/${limit} 件`,
+        day.past
+          ? "已過日期；只顯示固定行程"
+          : `已排 ${h(day.used)} / 可排 ${h(day.budget)} · ${day.ids.size}/${limit} 件`,
       ),
     );
+    const fixed = eventsOnDate(day.date);
+    for (const event of fixed) {
+      const row = make("div", undefined, "block fixed-event");
+      const label = `${event.start}–${event.end}　${event.title}`;
+      if (onEditEvent) {
+        const editButton = make("button", label, "event-open");
+        editButton.type = "button";
+        editButton.setAttribute("aria-label", `編輯行程：${event.title}`);
+        editButton.onclick = () => onEditEvent(event);
+        row.append(editButton);
+      } else row.append(make("span", label));
+      article.append(row);
+    }
     for (const block of day.blocks) {
       const row = make("div", undefined, "block");
       row.append(
@@ -3038,18 +3163,33 @@ function renderSchedule(container, result, { period, limit, onFocus }) {
       row.append(b);
       article.append(row);
     }
-    if (!day.blocks.length) article.append(make("p", "未排工作"));
+    if (!day.blocks.length && !fixed.length) article.append(make("p", "留白日程"));
     return article;
   }
   container.replaceChildren();
-  if (!result.days.length) {
+  container.classList.toggle("week-grid", period === "week");
+  if (!result.days.length && !(["day", "week"].includes(period) && displayDates.length)) {
     container.append(make("p", "所選週期已結束，請切換日期。"));
     return;
   }
-  if (period === "week") {
-    for (const day of result.days) {
+  if (period === "day" || period === "week") {
+    const days =
+      displayDates.length
+        ? displayDates.map((date) =>
+            result.days.find((day) => day.date === date) || {
+              date,
+              used: 0,
+              budget: 0,
+              ids: new Set(),
+              blocks: [],
+              past: true,
+            },
+          )
+        : result.days;
+    for (const day of days) {
       const panel = dayCard(day);
       panel.classList.add("panel");
+      if (period === "day") panel.classList.add("single-day");
       container.append(panel);
     }
     return;
@@ -3091,18 +3231,57 @@ function renderSchedule(container, result, { period, limit, onFocus }) {
 return {renderSchedule};
 })();
 __modules[13]=(()=>{
+const {parseSchedule}=__modules[6];
+
+// Merge calendar events without deleting either store. The main calendar wins
+// ID conflicts; the planner can safely add events without replacing user data.
+function mergeCalendarEvents(canonical, planner) {
+  const normalizedCanonical = canonical.map((event) =>
+    event?.status === "personal" ? { ...event, status: "confirmed" } : event,
+  );
+  const parsedPrimary = parseSchedule(JSON.stringify({ events: normalizedCanonical })).events;
+  const primary = canonical.map((event) => structuredClone(event));
+  const local = parseSchedule(JSON.stringify({ events: planner })).events;
+  const merged = new Map(primary.map((event) => [event.id, event]));
+  let added = 0, conflicts = 0;
+  for (const event of local) {
+    const existing = merged.get(event.id);
+    if (!existing) {
+      merged.set(event.id, event);
+      added++;
+    } else {
+      const parsedExisting = parsedPrimary.find((item) => item.id === event.id);
+      if (JSON.stringify(parsedExisting) !== JSON.stringify(event)) conflicts++;
+    }
+  }
+  const events = [...merged.values()];
+  parseSchedule(JSON.stringify({ events: events.map((event) =>
+    event?.status === "personal" ? { ...event, status: "confirmed" } : event,
+  ) }));
+  return {
+    events,
+    added,
+    conflicts,
+  };
+}
+
+return {mergeCalendarEvents};
+})();
+__modules[14]=(()=>{
 const {mountLifestyle}=__modules[1];
-const {plan,range,clock,pert,validate,parseWindows}=__modules[9];
+const {plan,range,shiftPeriod,clock,pert,validate,parseWindows}=__modules[9];
 const {parseSchedule,toICS,eventsOn}=__modules[6];
 const {createPlannerStore}=__modules[10];
 const {beginFocus,finishFocus,advanceTimer}=__modules[11];
 const {renderSchedule}=__modules[12];
+const {mergeCalendarEvents}=__modules[13];
 const $ = (id) => document.getElementById(id),
   key = "college-capacity-planner-v1",
   today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" }),
   weekdays = ["日", "一", "二", "三", "四", "五", "六"];
 const store = createPlannerStore(localStorage, key);
 let editing = null,
+  editingEvent = null,
   revision = 0;
 let state = store.read();
 if (store.error) $("status").textContent = "原資料未覆寫：" + store.error;
@@ -3186,6 +3365,7 @@ const initial = new Date(today + "T12:00:00Z");
 if (initial.getUTCDay() === 0) initial.setUTCDate(initial.getUTCDate() + 1);
 $("anchor").value = initial.toISOString().slice(0, 10);
 document.querySelector("[name=date]").value = today;
+resetEventEditor();
 for (const b of document.querySelectorAll("[data-tab]"))
   b.onclick = () =>
     $(b.dataset.tab).scrollIntoView?.({ behavior: "smooth", block: "start" });
@@ -3250,6 +3430,14 @@ function render() {
   renderSchedule($("schedule"), p, {
     period: $("period").value,
     limit: state.settings.limit,
+    displayDates: ["day", "week"].includes($("period").value) ? dates : [],
+    onSelectDate: safe((date) => {
+      $("anchor").value = date;
+      $("period").value = "day";
+      render();
+    }),
+    onEditEvent: safe((event) => beginEventEdit(event._seriesId || event.id)),
+    eventsOnDate: (date) => eventsOn(state.events, date),
     onFocus: (id) => {
       $("focus-task").value = id;
       $("start").onclick();
@@ -3335,18 +3523,25 @@ function render() {
   if (state.tasks.some((t) => t.id === selected))
     $("focus-task").value = selected;
   $("events").replaceChildren();
-  for (const e of state.events)
-    $("events").append(
+  if (editingEvent && !state.events.some((event) => event.id === editingEvent))
+    resetEventEditor();
+  for (const e of state.events) {
+    const row = node("div", undefined, "block");
+    row.append(
       node(
         "p",
         `${e.title} · ${e.date || "每週" + weekdays[e.weekday]} ${e.start}–${e.end}`,
       ),
+      btn("編輯事件", () => beginEventEdit(e.id)),
       btn("移除事件", () => {
         state.events = state.events.filter((x) => x.id !== e.id);
         save();
+        if (editingEvent === e.id) resetEventEditor();
         render();
       }),
     );
+    $("events").append(row);
+  }
 }
 $("task-form").onsubmit = safe((e) => {
   e.preventDefault();
@@ -3425,34 +3620,107 @@ $("settings-form").onsubmit = safe((e) => {
   render();
   $("status").textContent = "已保存。建議排程已重新計算。";
 });
+function resetEventEditor() {
+  editingEvent = null;
+  const form = $("event-form");
+  for (const field of ["title", "start", "end"]) form.elements[field].value = "";
+  form.elements.date.value = $("anchor").value || today;
+  form.elements.date.readOnly = false;
+  form.elements.repeat.checked = false;
+  form.elements.repeat.disabled = false;
+  $("event-submit").textContent = "加入固定事件";
+  $("event-cancel-edit").hidden = true;
+  $("event-edit-note").hidden = true;
+  $("event-edit-note").textContent = "";
+}
+function beginEventEdit(id) {
+  const event = state.events.find((item) => item.id === id);
+  if (!event) throw Error("行程已不存在，請重新選取。");
+  const form = $("event-form"), series = event.weekday !== undefined;
+  if (editingEvent === id) {
+    form.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    form.elements.title.focus?.();
+    return;
+  }
+  const current = state.events.find((item) => item.id === editingEvent);
+  const dirty = current
+    ? ["title", "start", "end"].some((field) => form.elements[field].value !== current[field]) ||
+      form.elements.date.value !== (current.date || current.from) ||
+      form.elements.repeat.checked !== (current.weekday !== undefined)
+    : ["title", "start", "end"].some((field) => form.elements[field].value.trim());
+  if (dirty && !confirm("切換行程會放棄目前未保存的內容，確定繼續？")) return;
+  editingEvent = id;
+  for (const field of ["title", "start", "end"]) form.elements[field].value = event[field];
+  form.elements.date.value = series ? event.from : event.date;
+  form.elements.date.readOnly = series;
+  form.elements.repeat.checked = series;
+  form.elements.repeat.disabled = series;
+  $("event-submit").textContent = "保存行程修改";
+  $("event-cancel-edit").hidden = false;
+  $("event-edit-note").hidden = false;
+  $("event-edit-note").textContent = series
+    ? `編輯整個每週系列（${event.from} ～ ${event.until}）；保留重複規則與單次例外。`
+    : "修改這一筆行程；原分類、備註與關聯資料會保留。";
+  form.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  form.elements.title.focus?.();
+}
+$("event-cancel-edit").onclick = resetEventEditor;
 $("event-form").onsubmit = safe((e) => {
   e.preventDefault();
+  const previous = editingEvent ? state.events.find((item) => item.id === editingEvent) : null;
+  if (editingEvent && !previous) throw Error("行程已不存在，請取消編輯後重新加入。");
   const f = new FormData(e.target),
     date = f.get("date"),
     item = {
-      id: crypto.randomUUID(),
+      ...previous,
+      id: previous?.id || crypto.randomUUID(),
       title: f.get("title").trim(),
-      date,
       start: f.get("start"),
       end: f.get("end"),
     };
   if (item.end <= item.start)
     throw Error("結束需晚於開始；跨午夜請拆成兩個事件");
-  if (f.has("repeat")) {
+  if (previous?.weekday === undefined) item.date = date;
+  if (previous?.weekday === undefined && f.has("repeat")) {
     item.weekday = new Date(date + "T12:00:00Z").getUTCDay();
     item.from = date;
     item.until = range(date, "quarter").at(-1);
     delete item.date;
   }
-  const next = { ...state, events: [...state.events, item] };
+  const next = {
+    ...state,
+    events: previous
+      ? state.events.map((event) => event.id === previous.id ? item : event)
+      : [...state.events, item],
+  };
   validate(next);
   state = next;
   save();
+  resetEventEditor();
   render();
-  e.target.reset();
-  e.target.elements.date.value = today;
+  $("status").textContent = previous ? "行程已修改，容量已重新計算。" : "已加入固定行程。";
 });
 for (const id of ["period", "anchor"]) $(id).onchange = safe(render);
+$("previous-period").onclick = safe(() => {
+  $("anchor").value = shiftPeriod(
+    $("anchor").value || today,
+    $("period").value,
+    -1,
+  );
+  render();
+});
+$("next-period").onclick = safe(() => {
+  $("anchor").value = shiftPeriod(
+    $("anchor").value || today,
+    $("period").value,
+    1,
+  );
+  render();
+});
+$("go-today").onclick = safe(() => {
+  $("anchor").value = today;
+  render();
+});
 $("replan").onclick = safe(render);
 $("print").onclick = () => {
   document.body.classList.toggle(
@@ -3576,28 +3844,39 @@ $("cancel-edit").onclick = () => {
   render();
 };
 $("import-existing").onclick = safe(() => {
-  const old = JSON.parse(localStorage.getItem("college-os-v1") || "{}");
-  const events = parseSchedule(
-    JSON.stringify({
-      events: (old.events || []).filter(
-        (e) => e.category !== "study" && e.start && e.end,
-      ),
-    }),
-  ).events;
-  if (!events.length) throw Error("此瀏覽器沒有可讀取的原日曆固定事件");
-  const map = new Map(state.events.map((e) => [e.id, e]));
-  let added = 0;
-  for (const e of events)
-    if (!map.has(e.id)) {
-      map.set(e.id, e);
-      added++;
-    }
-  const next = { ...state, events: [...map.values()] };
+  const raw = localStorage.getItem("college-os-v1");
+  let old = {};
+  if (raw) {
+    try { old = JSON.parse(raw); }
+    catch { throw Error("主日曆資料無法解析；未修改任何資料。"); }
+    if (
+      !old ||
+      typeof old !== "object" ||
+      Array.isArray(old) ||
+      !Array.isArray(old.events ?? [])
+    )
+      throw Error("主日曆資料格式不正確；未修改任何資料。");
+  }
+  const result = mergeCalendarEvents(old.events || [], state.events);
+  const normalized = parseSchedule(JSON.stringify({
+    events: result.events.map((e) =>
+      e.status === "personal" ? { ...e, status: "confirmed" } : e,
+    ),
+  })).events;
+  const events = normalized.filter(
+    (e) => e.category !== "study" && e.start && e.end,
+  );
+  const next = { ...state, events };
   validate(next);
+  // Calendar sync is additive. Keep every unrelated main-app field intact.
+  localStorage.setItem(
+    "college-os-v1",
+    JSON.stringify({ ...old, events: result.events }),
+  );
   state = next;
   save();
   render();
-  $("status").textContent = `已讀取 ${added} 個固定事件；重複ID保留目前版本。`;
+  $("status").textContent = `日曆已合併：新增 ${result.added} 個事件，${result.conflicts} 個同 ID 衝突保留主日曆版本。`;
 });
 $("confirm-plan").onclick = safe(() => {
   const p = currentPlan();
