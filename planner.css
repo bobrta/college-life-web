@@ -26,9 +26,9 @@ a {
   color: #28685a;
 }
 main {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: auto;
-  padding: 36px 24px;
+  padding: 22px 28px 56px;
 }
 h1 {
   font-size: clamp(28px, 4vw, 46px);
@@ -46,6 +46,7 @@ p {
   letter-spacing: 3px;
   color: #35735e;
 }
+.page-intro { margin-top: 0; }
 button,
 .button {
   border: 1px solid #cddbd0;
@@ -70,6 +71,35 @@ nav,
   flex-wrap: wrap;
   margin: 24px 0;
 }
+nav { margin: 14px 0; }
+.schedule-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #e0e5de;
+  border-radius: 14px;
+  background: rgb(250 251 249 / 94%);
+  backdrop-filter: blur(14px);
+}
+.range-controls, .primary-actions { display: flex; align-items: center; gap: 8px; }
+.range-controls button { min-width: 40px; }
+.range-controls select { min-width: 112px; }
+.primary-actions button:last-child { background: #285d4b; color: white; border-color: #285d4b; }
+.export-tools { padding: 12px 16px; margin: 10px 0; }
+.export-tools .toolbar { margin: 12px 0 0; align-items: end; }
+.onboarding { padding: 12px 16px; margin: 12px 0; }
+#hub-capture { padding: 18px 20px; margin: 16px 0; }
+#hub-capture h2 { margin: 0; }
+#hub-capture > p { margin: 6px 0; }
+#hub-capture .toolbar { margin: 10px 0; }
+#hub-command { min-height: 44px; resize: vertical; }
 .panel {
   padding: 24px;
   background: white;
@@ -127,6 +157,26 @@ form,
   border-top: 1px solid #e2e8e0;
   padding: 15px 0;
 }
+#schedule.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 14px;
+}
+#schedule.week-grid > .day.panel {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+#schedule.week-grid .day h3 { font-size: 14px; }
+#schedule.week-grid .block { display: block; padding: 8px; font-size: 12px; }
+#schedule.week-grid .block button { margin-top: 6px; }
+.fixed-event { border-left-color: #9aa89e; background: #f1f3f0; color: #526159; }
+.schedule-diagnostics { margin-top: 20px; }
+.schedule-diagnostics > .panel { margin: 12px 0; }
 .day h3 {
   margin: 4px 0 12px;
 }
@@ -189,6 +239,18 @@ form,
   .panel {
     padding: 18px;
   }
+}
+@media (max-width: 1100px) {
+  #schedule.week-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .schedule-toolbar { position: static; }
+  #schedule.week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .range-controls { width: 100%; flex-wrap: wrap; }
+  .range-controls input { flex: 1; }
+}
+@media (max-width: 420px) {
+  #schedule.week-grid { grid-template-columns: 1fr; }
 }
 @media print {
   header,
