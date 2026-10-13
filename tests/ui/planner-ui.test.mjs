@@ -106,7 +106,7 @@ async function loadUI(caseId) {
     submit("task-form");
     return read().tasks.at(-1).id;
   }
-  return { $, submit, read, add };
+  return { $, submit, read, add, readStorage: (k) => JSON.parse(data.get(k) || "null"), writeStorage: (k, v) => data.set(k, JSON.stringify(v)) };
 }
 test("P44 匯入備份不可靜默丟失進行中計時", async () => {
   const ui = await loadUI(44),
@@ -285,6 +285,33 @@ test("年範圍可操作且表單預算依範圍保存", async () => {
       (k) => k.includes("01-01") && k.includes("12-31"),
     ),
   );
+});
+test("日視圖與日期前後按鈕可切換且顯示固定行程", async () => {
+  const ui = await loadUI("day-navigation");
+  command(ui, "/cal 2026-10-15 14:00-15:00 [固定行程]");
+  ui.$("period").value = "day";
+  ui.$("anchor").value = "2026-10-15";
+  ui.$("period").onchange();
+  assert.equal(ui.$("schedule").querySelectorAll(".day").length, 1);
+  assert.match(ui.$("schedule").textContent, /固定行程/);
+  ui.$("next-period").onclick();
+  assert.equal(ui.$("anchor").value, "2026-10-16");
+  ui.$("previous-period").onclick();
+  assert.equal(ui.$("anchor").value, "2026-10-15");
+});
+test("固定行程同步雙向合併並保留主日曆其他資料", async () => {
+  const ui = await loadUI("calendar-safe-sync");
+  ui.writeStorage("college-os-v1", {
+    tasks: { keep: [{ title: "保留任務" }] },
+    events: [{ id: "course-1", title: "微積分補課", date: "2026-10-15", start: "08:00", end: "09:30", category: "course", status: "confirmed", custom: "保留" }],
+  });
+  command(ui, "/cal 2026-10-16 14:00-15:00 [規劃工作台行程]");
+  ui.$("import-existing").onclick();
+  const main = ui.readStorage("college-os-v1");
+  assert.equal(main.tasks.keep[0].title, "保留任務");
+  assert.ok(main.events.some((e) => e.title === "規劃工作台行程"));
+  assert.ok(ui.read().events.some((e) => e.title === "微積分補課"));
+  assert.match(ui.$("status").textContent, /日曆已合併/);
 });
 test("生活紀錄匯入保留財務與健康", async () => {
   const ui = await loadUI("hub10");
