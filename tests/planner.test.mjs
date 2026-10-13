@@ -1,18 +1,176 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import {subtract,pert,range,plan,validate} from '../planner-core.mjs';
-const base=()=>({version:1,settings:{limit:2,buffer:20,focus:50,rest:10,minBlock:20},days:Array.from({length:7},()=>({start:'18:00',end:'22:00',hours:4})),events:[],tasks:[]});
-const task=(id,remaining,extra={})=>({id,title:id,remaining,priority:2,active:true,done:false,deadline:'',...extra});
-test('重疊事件只扣一次',()=>assert.deepEqual(subtract(0,120,[[10,40],[20,60]]),[[0,10],[60,120]]));
-test('PERT validates ordering',()=>{assert.equal(pert(1,2,3),2);assert.throws(()=>pert(3,2,1));});
-test('月季跨年與閏年',()=>{assert.equal(range('2028-02-20','month').length,29);assert.equal(range('2026-12-31','quarter').at(-1),'2026-12-31');});
-test('時間與件數限制且區段不重疊',()=>{const s=base();s.tasks=[task('a',60),task('b',60),task('c',60)];const p=plan(s,['2026-10-12']);assert.equal(p.days[0].ids.size,2);assert.equal(p.unplaced[0].id,'c');assert.ok(p.scheduled<=p.capacity);const b=p.days[0].blocks.sort((a,b)=>a.start-b.start);for(let i=1;i<b.length;i++)assert.ok(b[i].start>=b[i-1].end);});
-test('休息與緩衝納入容量',()=>assert.equal(plan(base(),['2026-10-12']).capacity,160));
-test('固定保護事件不能被占用',()=>{const s=base();s.events=[{id:'rest',title:'休息',date:'2026-10-12',start:'19:00',end:'20:00'}];s.tasks=[task('a',200)];const p=plan(s,['2026-10-12']);for(const b of p.days[0].blocks)assert.ok(b.end<=1140||b.start>=1200);});
-test('過期限不排，依賴未完成不排',()=>{const s=base();s.tasks=[task('a',300,{deadline:'2026-10-11'}),task('b',30,{depends:'a'})];assert.equal(plan(s,['2026-10-12']).scheduled,0);});
-test('前置工作先完成',()=>{const s=base();s.tasks=[task('b',30,{depends:'a',priority:3}),task('a',30)];const p=plan(s,['2026-10-12']);const a=p.days[0].blocks.find(x=>x.id==='a'),b=p.days[0].blocks.find(x=>x.id==='b');assert.ok(b.start>=a.end);});
-test('備份拒絕循環依賴和非法時間',()=>{const s=base();s.tasks=[task('a',30,{depends:'b'}),task('b',30,{depends:'a'})];assert.throws(()=>validate(s));const x=base();x.days[0].end='99:00';assert.throws(()=>validate(x));});
-test('匯入拒絕損壞的計時與排程快照',()=>{const s=base();s.timer={mode:'focus',task:'missing',started:0,until:10};assert.throws(()=>validate(s));const x=base();x.confirmed={at:'today',blocks:[{title:'x',date:'2026-10-12',start:1300,end:1200}]};assert.throws(()=>validate(x));});
-test('多天複雜排程遵守每日上限、期限、無重疊',()=>{const s=base();s.tasks=Array.from({length:20},(_,i)=>task('t'+i,30+i*11,{deadline:i%2?'2026-10-14':''}));const p=plan(s,range('2026-10-12','week'));for(const d of p.days){assert.ok(d.used<=d.budget);assert.ok(d.ids.size<=2);const b=[...d.blocks].sort((a,b)=>a.start-b.start);for(let i=1;i<b.length;i++)assert.ok(b[i].start>=b[i-1].end);for(const x of b){const t=s.tasks.find(t=>t.id===x.id);assert.ok(!t.deadline||d.date<=t.deadline);}}assert.equal(p.scheduled+p.unplaced.reduce((n,t)=>n+t.missing,0),p.demand);});
-test('正常資料與有紀錄備份可以保存',()=>{const s=base();assert.equal(validate(s),s);s.tasks=[task('a',60)];s.logs=[{task:'a',date:'2026-10-12',minutes:25}];assert.equal(validate(s),s);});
-test('多個可用時段合併且單日例外生效',()=>{const s=base();s.days[1].windows=[{start:'08:00',end:'10:00'},{start:'09:00',end:'11:00'}];assert.equal(plan(s,['2026-10-12']).capacity,120);s.overrides={'2026-10-12':{windows:[],hours:0}};assert.equal(plan(s,['2026-10-12']).capacity,0);assert.equal(validate(s),s);});
-test('今日不排在已過時間',()=>{const s=base();s.tasks=[task('a',60)];const p=plan(s,['2026-10-12'],{date:'2026-10-12',minute:1200});assert.ok(p.days[0].blocks.every(b=>b.start>=1200));});
-test('休息後不得溢出可用時段',()=>{const s=base();s.days[1].windows=[{start:'08:00',end:'08:40'},{start:'20:00',end:'21:00'}];s.tasks=[task('a',400)];const p=plan(s,['2026-10-12']);for(const b of p.days[0].blocks)assert.ok((b.start>=480&&b.end<=520)||(b.start>=1200&&b.end<=1260));});
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  subtract,
+  pert,
+  range,
+  shiftPeriod,
+  plan,
+  validate,
+} from "../planner-core.mjs";
+const base = () => ({
+  version: 1,
+  settings: { limit: 2, buffer: 20, focus: 50, rest: 10, minBlock: 20 },
+  days: Array.from({ length: 7 }, () => ({
+    start: "18:00",
+    end: "22:00",
+    hours: 4,
+  })),
+  events: [],
+  tasks: [],
+});
+const task = (id, remaining, extra = {}) => ({
+  id,
+  title: id,
+  remaining,
+  priority: 2,
+  active: true,
+  done: false,
+  deadline: "",
+  ...extra,
+});
+test("重疊事件只扣一次", () =>
+  assert.deepEqual(
+    subtract(0, 120, [
+      [10, 40],
+      [20, 60],
+    ]),
+    [
+      [0, 10],
+      [60, 120],
+    ],
+  ));
+test("PERT validates ordering", () => {
+  assert.equal(pert(1, 2, 3), 2);
+  assert.throws(() => pert(3, 2, 1));
+});
+test("月季跨年與閏年", () => {
+  assert.equal(range("2028-02-20", "month").length, 29);
+  assert.equal(range("2026-12-31", "quarter").at(-1), "2026-12-31");
+});
+test("日視圖與週期前後切換支援月底及閏日", () => {
+  assert.deepEqual(range("2028-02-29", "day"), ["2028-02-29"]);
+  assert.equal(shiftPeriod("2028-01-31", "month", 1), "2028-02-29");
+  assert.equal(shiftPeriod("2028-02-29", "year", 1), "2029-02-28");
+  assert.equal(shiftPeriod("2026-10-15", "week", -1), "2026-10-08");
+});
+test("時間與件數限制且區段不重疊", () => {
+  const s = base();
+  s.tasks = [task("a", 60), task("b", 60), task("c", 60)];
+  const p = plan(s, ["2026-10-12"]);
+  assert.equal(p.days[0].ids.size, 2);
+  assert.equal(p.unplaced[0].id, "c");
+  assert.ok(p.scheduled <= p.capacity);
+  const b = p.days[0].blocks.sort((a, b) => a.start - b.start);
+  for (let i = 1; i < b.length; i++) assert.ok(b[i].start >= b[i - 1].end);
+});
+test("休息與緩衝納入容量", () =>
+  assert.equal(plan(base(), ["2026-10-12"]).capacity, 160));
+test("固定保護事件不能被占用", () => {
+  const s = base();
+  s.events = [
+    {
+      id: "rest",
+      title: "休息",
+      date: "2026-10-12",
+      start: "19:00",
+      end: "20:00",
+    },
+  ];
+  s.tasks = [task("a", 200)];
+  const p = plan(s, ["2026-10-12"]);
+  for (const b of p.days[0].blocks) assert.ok(b.end <= 1140 || b.start >= 1200);
+});
+test("過期限不排，依賴未完成不排", () => {
+  const s = base();
+  s.tasks = [
+    task("a", 300, { deadline: "2026-10-11" }),
+    task("b", 30, { depends: "a" }),
+  ];
+  assert.equal(plan(s, ["2026-10-12"]).scheduled, 0);
+});
+test("前置工作先完成", () => {
+  const s = base();
+  s.tasks = [task("b", 30, { depends: "a", priority: 3 }), task("a", 30)];
+  const p = plan(s, ["2026-10-12"]);
+  const a = p.days[0].blocks.find((x) => x.id === "a"),
+    b = p.days[0].blocks.find((x) => x.id === "b");
+  assert.ok(b.start >= a.end);
+});
+test("備份拒絕循環依賴和非法時間", () => {
+  const s = base();
+  s.tasks = [task("a", 30, { depends: "b" }), task("b", 30, { depends: "a" })];
+  assert.throws(() => validate(s));
+  const x = base();
+  x.days[0].end = "99:00";
+  assert.throws(() => validate(x));
+});
+test("匯入拒絕損壞的計時與排程快照", () => {
+  const s = base();
+  s.timer = { mode: "focus", task: "missing", started: 0, until: 10 };
+  assert.throws(() => validate(s));
+  const x = base();
+  x.confirmed = {
+    at: "today",
+    blocks: [{ title: "x", date: "2026-10-12", start: 1300, end: 1200 }],
+  };
+  assert.throws(() => validate(x));
+});
+test("多天複雜排程遵守每日上限、期限、無重疊", () => {
+  const s = base();
+  s.tasks = Array.from({ length: 20 }, (_, i) =>
+    task("t" + i, 30 + i * 11, { deadline: i % 2 ? "2026-10-14" : "" }),
+  );
+  const p = plan(s, range("2026-10-12", "week"));
+  for (const d of p.days) {
+    assert.ok(d.used <= d.budget);
+    assert.ok(d.ids.size <= 2);
+    const b = [...d.blocks].sort((a, b) => a.start - b.start);
+    for (let i = 1; i < b.length; i++) assert.ok(b[i].start >= b[i - 1].end);
+    for (const x of b) {
+      const t = s.tasks.find((t) => t.id === x.id);
+      assert.ok(!t.deadline || d.date <= t.deadline);
+    }
+  }
+  assert.equal(
+    p.scheduled + p.unplaced.reduce((n, t) => n + t.missing, 0),
+    p.demand,
+  );
+});
+test("正常資料與有紀錄備份可以保存", () => {
+  const s = base();
+  assert.equal(validate(s), s);
+  s.tasks = [task("a", 60)];
+  s.logs = [{ task: "a", date: "2026-10-12", minutes: 25 }];
+  assert.equal(validate(s), s);
+});
+test("多個可用時段合併且單日例外生效", () => {
+  const s = base();
+  s.days[1].windows = [
+    { start: "08:00", end: "10:00" },
+    { start: "09:00", end: "11:00" },
+  ];
+  assert.equal(plan(s, ["2026-10-12"]).capacity, 120);
+  s.overrides = { "2026-10-12": { windows: [], hours: 0 } };
+  assert.equal(plan(s, ["2026-10-12"]).capacity, 0);
+  assert.equal(validate(s), s);
+});
+test("今日不排在已過時間", () => {
+  const s = base();
+  s.tasks = [task("a", 60)];
+  const p = plan(s, ["2026-10-12"], { date: "2026-10-12", minute: 1200 });
+  assert.ok(p.days[0].blocks.every((b) => b.start >= 1200));
+});
+test("休息後不得溢出可用時段", () => {
+  const s = base();
+  s.days[1].windows = [
+    { start: "08:00", end: "08:40" },
+    { start: "20:00", end: "21:00" },
+  ];
+  s.tasks = [task("a", 400)];
+  const p = plan(s, ["2026-10-12"]);
+  for (const b of p.days[0].blocks)
+    assert.ok(
+      (b.start >= 480 && b.end <= 520) || (b.start >= 1200 && b.end <= 1260),
+    );
+});

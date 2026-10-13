@@ -1,5 +1,606 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>時間規劃｜College OS</title><link rel="stylesheet" href="planner.css"></head><body><header><a href="index.html">← 學習與生活</a><span>COLLEGE OS / 時間規劃</span><button id="backup">匯出備份</button><label class="button">匯入備份<input id="restore" type="file" accept="application/json" hidden></label></header><main><p class="eyebrow">先留休息，再承諾工作</p><h1>把時間，留給重要的事。</h1><p>週日排一週，月與季看容量。未確認的期限保持空白；所有估時都可修改。</p><nav><button data-tab="overview">排程總覽</button><button data-tab="goals">月／季目標</button><button data-tab="tasks">任務收件箱</button><button data-tab="settings">時間與休息</button><button data-tab="tools">計算工具</button></nav><p id="status" role="status"></p><details class="panel"><summary>第一次使用：四步完成一週規劃</summary><ol><li>到「時間與休息」填可用時段、每日工時上限與休息規則。</li><li>讀取原日曆固定事件；補課、考試、交通與週日規劃另行加入。</li><li>到「任務收件箱」填剩餘工時、期限、完成條件，選要推進的工作。</li><li>回「排程總覽」檢查未排入工作；調整後確認，執行時開啟專注計時。</li></ol><p>計時扣除的是投入時間，剩餘估時仍需你校正；投入時間不等於學會。估時歸零後仍要核對完成條件，再按「確認完成」。每次週日規劃後匯出備份。</p></details>
-<section id="overview"><div class="toolbar"><select id="period" aria-label="規劃範圍"><option value="week">週計畫</option><option value="month">月計畫</option><option value="quarter">季計畫</option></select><input id="anchor" type="date" aria-label="規劃日期"><button id="replan">重新計算建議</button><button id="export-ics">匯出日曆 ICS</button><button id="confirm-plan">確認此排程</button><button id="print">列印／存成 PDF</button></div><p id="range"></p><div id="metrics" class="metrics"></div><div class="panel"><h2>排不進去的工作</h2><p>本頁是排程建議。期限、依賴、完整時段或件數都可能造成缺口；不自動占用休息。</p><div id="warnings"></div></div><div class="panel timer"><h2>專注與強制休息</h2><select id="focus-task" aria-label="計時任務"></select><strong id="timer">尚未開始</strong><button id="start">開始專注</button><button id="stop">結束並記錄已用時間</button><p>專注結束後鎖定開始按鈕，直到休息結束。離開分頁後依截止時間校正；瀏覽器關閉時不保證通知。</p></div><details class="panel"><summary>最近確認的排程</summary><p id="confirmed-note"></p><div id="confirmed"></div></details><div id="schedule"></div></section>
-<section id="tasks" hidden><div class="panel"><h2>新增一件工作</h2><form id="task-form"><label>工作名稱<input name="title" required maxlength="200"></label><label>剩餘工時（小時）<input name="hours" type="number" min="0.05" max="1000" step="0.05" required></label><label>截止日期（未知留白）<input name="deadline" type="date"></label><label>重要性<select name="priority"><option value="3">高</option><option value="2" selected>中</option><option value="1">低</option></select></label><label>完成條件<input name="outcome" maxlength="300" placeholder="例如：指定題庫做完並訂正"></label><label>所屬月／季目標<select name="goal" id="task-goal"></select></label><label>前置任務<select name="depends" id="depends"></select></label><label><input name="active" type="checkbox" checked> 本週期要推進</label><button id="task-submit">加入工作</button><button id="cancel-edit" type="button" hidden>取消修改</button></form></div><div id="task-list"></div></section>
-<section id="settings" hidden><form id="settings-form" class="panel"><h2>容量與保護規則</h2><p>每天可填多個工作時段及工時上限。系統在時段內扣固定事件、安排休息，再保留緩衝；工時上限已扣課程者不重複扣。</p><div id="days"></div><div class="form-grid"><label>每日主要工作上限<input name="limit" type="number" min="1" max="10" required></label><label>緩衝 %<input name="buffer" type="number" min="0" max="80" required></label><label>每次專注分鐘<input name="focus" type="number" min="5" max="180" required></label><label>休息分鐘<input name="rest" type="number" min="1" max="60" required></label><label>最小工作區段（分鐘）<input name="minBlock" type="number" min="5" max="180" required></label></div><button>保存並重新計算</button></form><div class="panel"><h2>單日例外：補課、考試與狀態變動</h2><form id="override-form"><label>日期<input name="date" type="date" required></label><label>可用時段（空白＝整天不排）<input name="windows" placeholder="18:30-20:30,21:00-22:15"></label><label>當日工時上限（小時）<input name="hours" type="number" min="0" max="24" step="0.25" required></label><button>保存單日例外</button></form><div id="overrides"></div></div><div class="panel"><h2>固定事件／保護休息</h2><button id="import-existing" type="button">從原日曆讀取固定事件</button><p>只讀取課程、生活、休息與有時間的考試事件；自主讀書由新排程安排。原日曆保持原資料。</p><form id="event-form"><label>名稱<input name="title" maxlength="120" required></label><label>日期<input name="date" type="date" required></label><label>開始<input name="start" type="time" required></label><label>結束<input name="end" type="time" required></label><label><input name="repeat" type="checkbox"> 每週同一天（至本季末）</label><button>加入固定事件</button></form><p>準備和交通請包含在事件時間內。重疊事件合併扣除。</p><div id="events"></div></div></section>
-<section id="goals" hidden><div class="panel"><h2>月與季：先定成果，再拆工作</h2><p>目標與任務共用資料；新增任務時選擇所屬目標。完成率依任務件數呈現，不代表學習掌握度。</p><form id="goal-form"><label>成果名稱<input name="title" maxlength="200" required placeholder="例如：完成特選申請"></label><label>週期<select name="period"><option value="month">月目標</option><option value="quarter">季目標</option></select></label><label>所屬月份／季度日期<input name="date" type="date" required></label><button>加入目標</button></form><div id="goal-list"></div></div><div class="panel"><h2>實際投入紀錄</h2><p id="log-summary"></p><div id="log-list"></div></div></section><section id="tools" hidden><div class="panel"><h2>時間估算工具</h2><label>計算方式<select id="calc-type"><option value="pert">PERT：樂觀／最可能／悲觀（小時）</option><option value="video">影片：長度（分鐘）／倍速／理解與練習（分鐘）</option><option value="quiz">題庫：題數／每題分鐘／訂正總分鐘</option><option value="saving">自動化：使用次數／每次省分鐘／建置與維護總分鐘</option></select></label><div class="form-grid"><label>第一個數字<input id="a" type="number" min="0" step="any" value="1"></label><label>第二個數字<input id="b" type="number" min="0" step="any" value="2"></label><label>第三個數字<input id="c" type="number" min="0" step="any" value="4"></label></div><button id="calculate">計算</button><p id="calc-result" role="status"></p></div><div class="panel"><h2>計算原則</h2><p>容量＝可用工作區段與每日上限取較小值 ×（1－緩衝比例）。利用率＝需求÷容量。缺口＝未排入的剩餘工時。每日件數按不同主要任務計算。</p><p>週日固定規劃可在固定事件建立每週重複行程。月／季沿用每週可用時段，是情境估算，不代表已確認長期安排。無期限工作排在有期限工作之後。資料保存在此瀏覽器，跨裝置請匯出／匯入備份。</p></div></section></main><script type="module" src="planner-ui.mjs"></script></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>生活規劃工作台｜College OS</title>
+    <link rel="stylesheet" href="planner.css" />
+  </head>
+  <body>
+    <header>
+      <a href="index.html">← 學習與生活</a><span>COLLEGE OS / 時間規劃</span
+      ><button id="undo">復原</button><button id="redo">重做</button
+      ><button id="backup">匯出備份</button
+      ><label class="button"
+        >匯入備份<input
+          id="restore"
+          type="file"
+          accept="application/json"
+          hidden
+      /></label>
+    </header>
+    <main>
+      <p class="eyebrow">先留休息，再承諾工作</p>
+      <h1>生活規劃</h1>
+      <p class="page-intro">行程、任務、財務與恢復，在同一個工作區安排。</p>
+      <nav>
+        <button data-tab="overview" class="active" aria-pressed="true">
+          排程總覽</button
+        ><button data-tab="goals">月／季目標</button
+        ><button data-tab="tasks">任務收件箱</button
+        ><button data-tab="settings">時間與休息</button
+        ><button data-tab="tools">計算工具</button>
+      </nav>
+      <p id="status" role="status"></p>
+      <details class="panel onboarding">
+        <summary>第一次使用：四步完成一週規劃</summary>
+        <ol>
+          <li>到「時間與休息」填可用時段、每日工時上限與休息規則。</li>
+          <li>讀取原日曆固定事件；補課、考試、交通與週日規劃另行加入。</li>
+          <li>到「任務收件箱」填剩餘工時、期限、完成條件，選要推進的工作。</li>
+          <li>
+            回「排程總覽」檢查未排入工作；調整後確認，執行時開啟專注計時。
+          </li>
+        </ol>
+        <p>
+          計時扣除的是投入時間，剩餘估時仍需你校正；投入時間不等於學會。估時歸零後仍要核對完成條件，再按「確認完成」。每次週日規劃後匯出備份。
+        </p>
+      </details>
+      <section id="overview">
+        <div class="schedule-toolbar">
+          <div class="range-controls">
+            <button id="previous-period" type="button" aria-label="上一個週期">‹</button>
+            <select id="period" aria-label="規劃範圍">
+              <option value="day">日</option>
+              <option value="week">週計畫</option>
+              <option value="month">月計畫</option>
+              <option value="quarter">季計畫</option>
+              <option value="year">年計畫</option>
+            </select>
+            <input id="anchor" type="date" aria-label="規劃日期" />
+            <button id="next-period" type="button" aria-label="下一個週期">›</button>
+            <button id="go-today" type="button">今天</button>
+          </div>
+          <div class="primary-actions">
+            <button id="replan">重新計算</button>
+            <button id="confirm-plan">確認排程</button>
+          </div>
+        </div>
+        <details class="panel export-tools">
+          <summary>匯出與列印</summary>
+          <div class="toolbar">
+            <label>匯出版本<select id="export-plan-source">
+              <option value="suggested">目前建議</option>
+              <option value="confirmed">已確認快照</option>
+            </select></label>
+            <label><input id="export-fixed" type="checkbox" checked />含固定行程</label>
+            <button id="export-ics">匯出日曆 ICS</button>
+            <label>PDF內容<select id="print-scope">
+              <option value="schedule">行程與時間分析</option>
+              <option value="all">全部，含財務與活動</option>
+            </select></label>
+            <button id="print">列印／存成 PDF</button>
+          </div>
+        </details>
+        <p id="range"></p>
+        <div id="metrics" class="metrics"></div>
+        <div id="schedule"></div>
+        <section id="hub-capture" class="panel">
+          <h2>快速輸入</h2>
+          <p id="hub-summary"></p>
+          <p>Cmd／Ctrl＋K 跳到輸入欄。先預覽再加入；可一次排程並登記預定費用。</p>
+          <label for="hub-command">指令或 JSON</label>
+          <textarea id="hub-command" rows="1" maxlength="10000" placeholder="/cal 2026-10-15 14:00-15:00 [寫報告] $150"></textarea>
+          <div class="toolbar">
+            <button id="command-preview" type="button">預覽資料</button>
+            <button id="command-apply" type="button" disabled>確認加入</button>
+            <details class="quick-links"><summary>跳到其他功能</summary>
+              <button data-hub-jump="finance-hub">財務</button>
+              <button data-hub-jump="decision-hub">決策</button>
+              <button data-hub-jump="health-hub">活動與恢復</button>
+            </details>
+          </div>
+          <pre id="command-result" aria-live="polite"></pre>
+          <p id="hub-status" role="status"></p>
+          <details><summary>指令範例</summary>
+            <pre>/cal 2026-10-15 14:00-15:00 [寫報告] $150
+/fin -150 #餐費 [午餐]
+/fin 2026-10-20 -300 #交通 [考試交通] !預定
+/task [管理學報告] 2h -> must
+/fit 20m #walk [散步]</pre>
+            <p>預定支出轉為實際後不重複扣款；只有「正在做」的工作會自動排程。</p>
+          </details>
+        </section>
+        <details class="panel schedule-diagnostics">
+          <summary>容量檢查、專注計時與已確認排程</summary>
+          <div class="panel">
+            <h2>排不進去的工作</h2>
+            <p>超出容量的工作保留在這裡，不占用休息。</p>
+            <div id="warnings"></div>
+          </div>
+          <div class="panel timer">
+            <h2>專注與強制休息</h2>
+            <select id="focus-task" aria-label="計時任務"></select
+            ><strong id="timer">尚未開始</strong
+            ><button id="start">開始專注</button
+            ><button id="stop">結束並記錄已用時間</button
+            ><small>專注結束後須完成休息，才能開始下一段。</small>
+          </div>
+          <h2>最近確認的排程</h2>
+          <p id="confirmed-note"></p>
+          <div id="confirmed"></div>
+        </details>
+        <div class="panel">
+          <h2>時間分析</h2>
+          <label
+            >圖表<select id="time-chart-kind">
+              <option value="bars">每日建議時數</option>
+              <option value="donut">工作分類比例</option>
+              <option value="line">實際投入時數趨勢</option>
+              <option value="heat">每日建議時數熱圖</option>
+              <option value="table">時數明細</option>
+            </select></label
+          >
+          <p>
+            分類比例只統計已排工作，不含固定課程；建議排程只包含今天起的區段；實際投入使用計時紀錄，未記錄不等於沒有學習。
+          </p>
+          <div id="time-chart" class="hub-chart"></div>
+        </div>
+      </section>
+      <section id="tasks">
+        <div class="panel">
+          <h2>新增一件工作</h2>
+          <form id="task-form">
+            <label
+              >工作名稱<input name="title" required maxlength="200" /></label
+            ><label
+              >剩餘工時（小時）<input
+                name="hours"
+                type="number"
+                min="0"
+                max="1000"
+                step="any"
+                required /></label
+            ><label
+              >截止日期（未知留白）<input name="deadline" type="date" /></label
+            ><label
+              >完成條件<input
+                name="outcome"
+                maxlength="300"
+                placeholder="例如：指定題庫做完並訂正"
+            /></label>
+            <details class="task-advanced">
+              <summary>優先順序與目標（選填）</summary>
+              <div class="form-grid">
+                <label
+                  >重要性<select name="priority">
+                    <option value="3">高</option>
+                    <option value="2" selected>中</option>
+                    <option value="1">低</option>
+                  </select></label
+                ><label
+                  >所屬月／季目標<select
+                    name="goal"
+                    id="task-goal"
+                  ></select></label
+                ><label
+                  >分類<select name="category">
+                    <option value="study">學習</option>
+                    <option value="work">報告／工作</option>
+                    <option value="exercise">運動</option>
+                    <option value="personal">生活</option>
+                  </select></label
+                ><label
+                  >前置任務<select name="depends" id="depends"></select></label
+                ><label
+                  ><input name="active" type="checkbox" checked />
+                  本週期要推進</label
+                >
+              </div>
+            </details>
+            <button id="task-submit">加入工作</button
+            ><button id="cancel-edit" type="button" hidden>取消修改</button>
+          </form>
+        </div>
+        <div id="task-list"></div>
+      </section>
+      <section id="settings">
+        <form id="settings-form" class="panel">
+          <h2>容量與保護規則</h2>
+          <p>
+            每天可填多個工作時段及工時上限。系統在時段內扣固定事件、安排休息，再保留緩衝；工時上限已扣課程者不重複扣。
+          </p>
+          <div id="days"></div>
+          <div class="form-grid">
+            <label
+              >每日主要工作上限<input
+                name="limit"
+                type="number"
+                min="1"
+                max="10"
+                required /></label
+            ><label
+              >緩衝 %<input
+                name="buffer"
+                type="number"
+                min="0"
+                max="80"
+                required /></label
+            ><label
+              >每次專注分鐘<input
+                name="focus"
+                type="number"
+                min="5"
+                max="180"
+                required /></label
+            ><label
+              >休息分鐘<input
+                name="rest"
+                type="number"
+                min="1"
+                max="60"
+                required /></label
+            ><label
+              >最小工作區段（分鐘）<input
+                name="minBlock"
+                type="number"
+                min="5"
+                max="180"
+                required
+            /></label>
+          </div>
+          <button>保存並重新計算</button>
+        </form>
+        <div class="panel">
+          <h2>單日例外：補課、考試與狀態變動</h2>
+          <form id="override-form">
+            <label>日期<input name="date" type="date" required /></label
+            ><label
+              >可用時段（空白＝整天不排）<input
+                name="windows"
+                placeholder="18:30-20:30,21:00-22:15" /></label
+            ><label
+              >當日工時上限（小時）<input
+                name="hours"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                required /></label
+            ><button>保存單日例外</button>
+          </form>
+          <div id="overrides"></div>
+        </div>
+        <div class="panel">
+          <h2>固定事件／保護休息</h2>
+          <button id="import-existing" type="button">同步兩個日曆</button>
+          <p>
+            合併固定行程到主日曆並讀回課程、生活、休息與考試；同 ID 衝突保留主日曆版本。此操作不刪除資料，也不會發布建議讀書時段。
+          </p>
+          <form id="event-form">
+            <label>名稱<input name="title" maxlength="120" required /></label
+            ><label>日期<input name="date" type="date" required /></label
+            ><label>開始<input name="start" type="time" required /></label
+            ><label>結束<input name="end" type="time" required /></label
+            ><label
+              ><input name="repeat" type="checkbox" />
+              每週同一天（至本季末）</label
+            ><button id="event-submit">加入固定事件</button>
+            <button id="event-cancel-edit" type="button" hidden>取消編輯</button>
+          </form>
+          <p id="event-edit-note" role="status" hidden></p>
+          <p>準備和交通請包含在事件時間內。重疊事件合併扣除。</p>
+          <div id="events"></div>
+        </div>
+      </section>
+      <section id="goals">
+        <div class="panel">
+          <h2>月與季：先定成果，再拆工作</h2>
+          <p>
+            目標與任務共用資料；新增任務時選擇所屬目標。完成率依任務件數呈現，不代表學習掌握度。
+          </p>
+          <form id="goal-form">
+            <label
+              >成果名稱<input
+                name="title"
+                maxlength="200"
+                required
+                placeholder="例如：完成特選申請" /></label
+            ><label
+              >週期<select name="period">
+                <option value="month">月目標</option>
+                <option value="quarter">季目標</option>
+              </select></label
+            ><label
+              >所屬月份／季度日期<input
+                name="date"
+                type="date"
+                required /></label
+            ><button>加入目標</button>
+          </form>
+          <div id="goal-list"></div>
+        </div>
+        <div class="panel">
+          <h2>實際投入紀錄</h2>
+          <p id="log-summary"></p>
+          <div id="log-list"></div>
+        </div>
+      </section>
+      <section id="tools">
+        <div class="panel">
+          <h2>時間估算工具</h2>
+          <label
+            >計算方式<select id="calc-type">
+              <option value="pert">PERT：樂觀／最可能／悲觀（小時）</option>
+              <option value="video">
+                影片：長度（分鐘）／倍速／理解與練習（分鐘）
+              </option>
+              <option value="quiz">題庫：題數／每題分鐘／訂正總分鐘</option>
+              <option value="saving">
+                自動化：使用次數／每次省分鐘／建置與維護總分鐘
+              </option>
+            </select></label
+          >
+          <div class="form-grid">
+            <label
+              ><span id="calc-a-label">樂觀時間（小時）</span
+              ><input
+                id="a"
+                type="number"
+                min="0"
+                step="any"
+                value="1" /></label
+            ><label
+              ><span id="calc-b-label">最可能時間（小時）</span
+              ><input
+                id="b"
+                type="number"
+                min="0"
+                step="any"
+                value="2" /></label
+            ><label
+              ><span id="calc-c-label">悲觀時間（小時）</span
+              ><input id="c" type="number" min="0" step="any" value="4"
+            /></label>
+          </div>
+          <button id="calculate">計算</button>
+          <p id="calc-result" role="status"></p>
+        </div>
+        <div class="panel">
+          <h2>計算原則</h2>
+          <p>
+            容量＝可用工作區段與每日上限取較小值
+            ×（1－緩衝比例）。利用率＝需求÷容量。缺口＝未排入的剩餘工時。每日件數按不同主要任務計算。
+          </p>
+          <p>
+            週日固定規劃可在固定事件建立每週重複行程。月／季沿用每週可用時段，是情境估算，不代表已確認長期安排。無期限工作排在有期限工作之後。資料保存在此瀏覽器，跨裝置請匯出／匯入備份。
+          </p>
+        </div>
+      </section>
+      <div class="hub-bento">
+        <section id="finance-hub" class="panel">
+          <h2>財務與預定支出</h2>
+          <p>
+            台幣總帳，期初餘額加實際收支。這一版不處理帳戶轉帳、借款及多幣別。
+          </p>
+          <div id="money-metrics" class="metrics"></div>
+          <details>
+            <summary>餘額、儲備與本期預算</summary>
+            <form id="money-settings" class="form-grid">
+              <label
+                >記帳開始前餘額<input
+                  name="opening"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  required /></label
+              ><label
+                >另外保留的儲備金<input
+                  name="reserve"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  required /></label
+              ><label
+                >選定期間支出預算<input
+                  name="budget"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  required /></label
+              ><button>保存設定</button>
+            </form>
+            <p>
+              預算依目前選定的日期範圍分開保存。儲備金不要重複包含已列入預定支出的費用。
+            </p>
+          </details>
+          <form id="money-form" class="form-grid">
+            <label>日期<input name="date" type="date" required /></label
+            ><label
+              >類型<select name="type">
+                <option value="expense">支出</option>
+                <option value="income">收入</option>
+              </select></label
+            ><label
+              >狀態<select name="status">
+                <option value="actual">實際已發生</option>
+                <option value="planned">預定</option>
+              </select></label
+            ><label
+              >金額<input
+                name="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required /></label
+            ><label
+              >分類<input
+                name="category"
+                maxlength="60"
+                value="餐費"
+                required /></label
+            ><label>備註<input name="note" maxlength="300" /></label
+            ><button>加入收支</button>
+          </form>
+          <p id="money-warning"></p>
+          <label
+            >圖表<select id="money-chart-kind">
+              <option value="line">每日預測餘額</option>
+              <option value="donut">本期支出分類比例</option>
+              <option value="bars">本期分類支出金額</option>
+              <option value="table">預測餘額明細</option>
+            </select></label
+          >
+          <div id="money-chart" class="hub-chart"></div>
+          <details>
+            <summary>本期紀錄與過期預定（最多顯示100筆）</summary>
+            <div id="money-list"></div>
+          </details>
+        </section>
+        <section id="decision-hub" class="panel">
+          <h2>資源與決策</h2>
+          <form id="resource-form" class="form-grid">
+            <label class="wide"
+              >現有資源：課本、課程、工具、協助者<textarea
+                name="resources"
+                rows="3"
+                maxlength="2000"
+              ></textarea></label
+            ><label
+              >進行中上限<select name="wipLimit">
+                <option value="1">1件</option>
+                <option value="2">2件</option>
+                <option value="3" selected>3件</option>
+                <option value="4">4件</option>
+              </select></label
+            ><button>保存資源與上限</button>
+          </form>
+          <p id="resource-summary"></p>
+          <form id="decision-form" class="form-grid">
+            <label>事項<input name="title" maxlength="200" required /></label
+            ><label
+              >狀態<select name="pool">
+                <option value="must">一定要做</option>
+                <option value="want">想做</option>
+                <option value="doing">正在做</option>
+              </select></label
+            ><label
+              >估計工時<input
+                name="hours"
+                type="number"
+                min="0.01"
+                max="1000"
+                step="any"
+                value="1"
+                required /></label
+            ><label
+              >預估成本<input
+                name="cost"
+                type="number"
+                min="0"
+                step="0.01"
+                value="0"
+                required /></label
+            ><label
+              >重要程度1–5<input
+                name="importance"
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value="3"
+                required /></label
+            ><label
+              >緊急程度1–5<input
+                name="urgency"
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value="3"
+                required /></label
+            ><label>期限<input name="deadline" type="date" /></label
+            ><button>新增事項與關聯任務</button>
+          </form>
+          <p>
+            必做和想做先留在任務收件箱；按「開始推進」才參與排程。評分＝（重要×3＋緊急×2）÷5；仍須核對期限、費用與前置條件。
+          </p>
+          <div id="decision-list" class="hub-pools"></div>
+          <label
+            >圖表<select id="decision-chart-kind">
+              <option value="bars">重要與緊急加權排序</option>
+              <option value="donut">事項狀態分布</option>
+              <option value="heat">各事項估時分布</option>
+              <option value="table">優先分數明細</option>
+            </select></label
+          >
+          <div id="decision-chart" class="hub-chart"></div>
+        </section>
+        <section id="health-hub" class="panel">
+          <h2>活動與恢復紀錄</h2>
+          <p>
+            先記實際活動和主觀狀況。系統不把運動當作精力加分，也不自動生成高強度訓練課表。
+          </p>
+          <form id="health-form" class="form-grid">
+            <label>日期<input name="date" type="date" required /></label
+            ><label
+              >活動<select name="kind">
+                <option value="walk">散步</option>
+                <option value="run">跑步</option>
+                <option value="strength">肌力</option>
+                <option value="stretch">伸展</option>
+                <option value="rest">恢復</option>
+              </select></label
+            ><label
+              >活動分鐘<input
+                name="minutes"
+                type="number"
+                min="0"
+                max="600"
+                step="1"
+                value="20"
+                required /></label
+            ><label
+              >睡眠小時（0＝未填）<input
+                name="sleep"
+                type="number"
+                min="0"
+                max="24"
+                step="any"
+                value="0"
+                required /></label
+            ><label
+              >主觀疲勞1–5<input
+                name="fatigue"
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value="3"
+                required /></label
+            ><label>備註<input name="note" maxlength="300" /></label
+            ><button>保存紀錄</button>
+          </form>
+          <p id="health-summary"></p>
+          <label
+            >圖表<select id="health-chart-kind">
+              <option value="bars">每日活動分鐘</option>
+              <option value="donut">活動種類比例</option>
+              <option value="line">已填睡眠趨勢</option>
+              <option value="table">活動分鐘明細</option>
+            </select></label
+          >
+          <div id="health-chart" class="hub-chart"></div>
+          <details>
+            <summary>本期活動明細（最多顯示50筆）</summary>
+            <div id="health-list"></div>
+          </details>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="planner-ui.mjs"></script>
+  </body>
+</html>

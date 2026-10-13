@@ -1,84 +1,4087 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>時間規劃｜College OS</title><style>:root{font-family:system-ui,'Microsoft JhengHei',sans-serif;color:#243d38;background:#f4f6f2}*{box-sizing:border-box}body{margin:0}header{display:flex;gap:20px;align-items:center;padding:20px 5%;border-bottom:1px solid #dce4da;background:white}header span{flex:1;font-size:12px;letter-spacing:2px}a{color:#28685a}main{max-width:1200px;margin:auto;padding:36px 24px}h1{font-size:clamp(28px,4vw,46px);margin:8px 0}h2{font-size:21px}p{line-height:1.7;color:#5b6c64}.eyebrow{font-size:12px;letter-spacing:3px;color:#35735e}button,.button{border:1px solid #cddbd0;background:#fff;color:#244c3c;padding:10px 16px;border-radius:9px;cursor:pointer;font-size:14px}button:hover{background:#e5eee5}button:disabled{opacity:.5;cursor:not-allowed}nav,.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.panel{padding:24px;background:white;border:1px solid #dce4da;border-radius:16px;margin:18px 0}input,select{padding:10px;border:1px solid #cad8cc;border-radius:7px;max-width:100%;font:inherit;background:white}label{display:flex;gap:8px;flex-direction:column;font-size:13px}label:has(input[type=checkbox]){flex-direction:row;align-items:center}form,.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}#settings-form{display:block}#settings-form .form-grid{margin:20px 0}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.metric{background:#e6eee5;border-radius:14px;padding:20px}.metric strong{display:block;font-size:30px;margin-top:10px}.day{border-top:1px solid #e2e8e0;padding:15px 0}.day h3{margin:4px 0 12px}.block{padding:12px;border-left:3px solid #4e8168;background:#f2f6ee;margin:7px 0}.warning{border-left:3px solid #b97740;background:#fff4e7;padding:12px;margin:10px 0}.task{display:flex;gap:15px;align-items:center;flex-wrap:wrap}.task .content{flex:1;min-width:200px}.task p{margin:4px 0}.timer{display:flex;align-items:center;gap:15px;flex-wrap:wrap}.timer p{width:100%}#timer{font-size:28px}#days .form-grid{margin:12px 0}[hidden]{display:none!important}#status{color:#9b5027} @media(max-width:700px){header{flex-wrap:wrap}.metrics{grid-template-columns:repeat(2,1fr)}main{padding:20px 14px}.panel{padding:18px}}@media print{header,nav,button,.timer{display:none}section[hidden]{display:none}body{background:white}.panel,.metric{break-inside:avoid}}
-</style></head><body><header><a href="https://bobrta.github.io/college-life-web/">← 學習與生活</a><span>COLLEGE OS / 時間規劃</span><button id="backup">匯出備份</button><label class="button">匯入備份<input id="restore" type="file" accept="application/json" hidden></label></header><main><p class="eyebrow">先留休息，再承諾工作</p><h1>把時間，留給重要的事。</h1><p>週日排一週，月與季看容量。未確認的期限保持空白；所有估時都可修改。</p><nav><button data-tab="overview">排程總覽</button><button data-tab="goals">月／季目標</button><button data-tab="tasks">任務收件箱</button><button data-tab="settings">時間與休息</button><button data-tab="tools">計算工具</button></nav><p id="status" role="status"></p><details class="panel"><summary>第一次使用：四步完成一週規劃</summary><ol><li>到「時間與休息」填可用時段、每日工時上限與休息規則。</li><li>讀取原日曆固定事件；補課、考試、交通與週日規劃另行加入。</li><li>到「任務收件箱」填剩餘工時、期限、完成條件，選要推進的工作。</li><li>回「排程總覽」檢查未排入工作；調整後確認，執行時開啟專注計時。</li></ol><p>計時扣除的是投入時間，剩餘估時仍需你校正；投入時間不等於學會。估時歸零後仍要核對完成條件，再按「確認完成」。每次週日規劃後匯出備份。</p></details>
-<section id="overview"><div class="toolbar"><select id="period" aria-label="規劃範圍"><option value="week">週計畫</option><option value="month">月計畫</option><option value="quarter">季計畫</option></select><input id="anchor" type="date" aria-label="規劃日期"><button id="replan">重新計算建議</button><button id="export-ics">匯出日曆 ICS</button><button id="confirm-plan">確認此排程</button><button id="print">列印／存成 PDF</button></div><p id="range"></p><div id="metrics" class="metrics"></div><div class="panel"><h2>排不進去的工作</h2><p>本頁是排程建議。期限、依賴、完整時段或件數都可能造成缺口；不自動占用休息。</p><div id="warnings"></div></div><div class="panel timer"><h2>專注與強制休息</h2><select id="focus-task" aria-label="計時任務"></select><strong id="timer">尚未開始</strong><button id="start">開始專注</button><button id="stop">結束並記錄已用時間</button><p>專注結束後鎖定開始按鈕，直到休息結束。離開分頁後依截止時間校正；瀏覽器關閉時不保證通知。</p></div><details class="panel"><summary>最近確認的排程</summary><p id="confirmed-note"></p><div id="confirmed"></div></details><div id="schedule"></div></section>
-<section id="tasks" hidden><div class="panel"><h2>新增一件工作</h2><form id="task-form"><label>工作名稱<input name="title" required maxlength="200"></label><label>剩餘工時（小時）<input name="hours" type="number" min="0.05" max="1000" step="0.05" required></label><label>截止日期（未知留白）<input name="deadline" type="date"></label><label>重要性<select name="priority"><option value="3">高</option><option value="2" selected>中</option><option value="1">低</option></select></label><label>完成條件<input name="outcome" maxlength="300" placeholder="例如：指定題庫做完並訂正"></label><label>所屬月／季目標<select name="goal" id="task-goal"></select></label><label>前置任務<select name="depends" id="depends"></select></label><label><input name="active" type="checkbox" checked> 本週期要推進</label><button id="task-submit">加入工作</button><button id="cancel-edit" type="button" hidden>取消修改</button></form></div><div id="task-list"></div></section>
-<section id="settings" hidden><form id="settings-form" class="panel"><h2>容量與保護規則</h2><p>每天可填多個工作時段及工時上限。系統在時段內扣固定事件、安排休息，再保留緩衝；工時上限已扣課程者不重複扣。</p><div id="days"></div><div class="form-grid"><label>每日主要工作上限<input name="limit" type="number" min="1" max="10" required></label><label>緩衝 %<input name="buffer" type="number" min="0" max="80" required></label><label>每次專注分鐘<input name="focus" type="number" min="5" max="180" required></label><label>休息分鐘<input name="rest" type="number" min="1" max="60" required></label><label>最小工作區段（分鐘）<input name="minBlock" type="number" min="5" max="180" required></label></div><button>保存並重新計算</button></form><div class="panel"><h2>單日例外：補課、考試與狀態變動</h2><form id="override-form"><label>日期<input name="date" type="date" required></label><label>可用時段（空白＝整天不排）<input name="windows" placeholder="18:30-20:30,21:00-22:15"></label><label>當日工時上限（小時）<input name="hours" type="number" min="0" max="24" step="0.25" required></label><button>保存單日例外</button></form><div id="overrides"></div></div><div class="panel"><h2>固定事件／保護休息</h2><button id="import-existing" type="button">從原日曆讀取固定事件</button><p>只讀取課程、生活、休息與有時間的考試事件；自主讀書由新排程安排。原日曆保持原資料。</p><form id="event-form"><label>名稱<input name="title" maxlength="120" required></label><label>日期<input name="date" type="date" required></label><label>開始<input name="start" type="time" required></label><label>結束<input name="end" type="time" required></label><label><input name="repeat" type="checkbox"> 每週同一天（至本季末）</label><button>加入固定事件</button></form><p>準備和交通請包含在事件時間內。重疊事件合併扣除。</p><div id="events"></div></div></section>
-<section id="goals" hidden><div class="panel"><h2>月與季：先定成果，再拆工作</h2><p>目標與任務共用資料；新增任務時選擇所屬目標。完成率依任務件數呈現，不代表學習掌握度。</p><form id="goal-form"><label>成果名稱<input name="title" maxlength="200" required placeholder="例如：完成特選申請"></label><label>週期<select name="period"><option value="month">月目標</option><option value="quarter">季目標</option></select></label><label>所屬月份／季度日期<input name="date" type="date" required></label><button>加入目標</button></form><div id="goal-list"></div></div><div class="panel"><h2>實際投入紀錄</h2><p id="log-summary"></p><div id="log-list"></div></div></section><section id="tools" hidden><div class="panel"><h2>時間估算工具</h2><label>計算方式<select id="calc-type"><option value="pert">PERT：樂觀／最可能／悲觀（小時）</option><option value="video">影片：長度（分鐘）／倍速／理解與練習（分鐘）</option><option value="quiz">題庫：題數／每題分鐘／訂正總分鐘</option><option value="saving">自動化：使用次數／每次省分鐘／建置與維護總分鐘</option></select></label><div class="form-grid"><label>第一個數字<input id="a" type="number" min="0" step="any" value="1"></label><label>第二個數字<input id="b" type="number" min="0" step="any" value="2"></label><label>第三個數字<input id="c" type="number" min="0" step="any" value="4"></label></div><button id="calculate">計算</button><p id="calc-result" role="status"></p></div><div class="panel"><h2>計算原則</h2><p>容量＝可用工作區段與每日上限取較小值 ×（1－緩衝比例）。利用率＝需求÷容量。缺口＝未排入的剩餘工時。每日件數按不同主要任務計算。</p><p>週日固定規劃可在固定事件建立每週重複行程。月／季沿用每週可用時段，是情境估算，不代表已確認長期安排。無期限工作排在有期限工作之後。資料保存在此瀏覽器，跨裝置請匯出／匯入備份。</p></div></section></main><script type="module">function weekDates(date){const d=new Date(date+'T12:00:00Z');const offset=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-offset);return Array.from({length:7},(_,i)=>{const day=new Date(d);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);});}
-function eventsOn(events,date){const weekday=new Date(date+'T12:00:00Z').getUTCDay();return events.flatMap(event=>{
- if(event.date===date)return [event];
- if(event.weekday!==weekday||date<event.from||date>event.until||(event.excludedDates??[]).includes(date))return [];
- const override=event.overrides?.[date]??{};
- return [{...event,...override,id:`${event.id}@${date}`,_seriesId:event.id,_occurrenceDate:date}];
-}).sort((a,b)=>(a.start??'').localeCompare(b.start??''));}
-function workloadByDay(events,dates){const categories=['course','study','rest','deadline','personal'];return dates.map(date=>{const minutes=Object.fromEntries(categories.map(category=>[category,0]));for(const event of eventsOn(events,date)){if(!event.start||!event.end)continue;const toMinutes=value=>Number(value.slice(0,2))*60+Number(value.slice(3));const duration=Math.max(0,toMinutes(event.end)-toMinutes(event.start));const category=categories.includes(event.category)?event.category:'personal';minutes[category]+=duration;}return {date,minutes,total:Object.values(minutes).reduce((sum,value)=>sum+value,0)};});}
-function excludeOccurrence(events,seriesId,date){return events.map(event=>event.id===seriesId&&event.weekday!==undefined?{...event,excludedDates:[...new Set([...(event.excludedDates??[]),date])].sort()}:event);}
-function detachOccurrence(events,seriesId,date,changes){const series=events.find(event=>event.id===seriesId&&event.weekday!==undefined);if(!series)throw new Error('找不到要修改的週期行程。');const updated=excludeOccurrence(events,seriesId,date);return [...updated,{...series,...changes,id:crypto.randomUUID(),date,weekday:undefined,from:undefined,until:undefined,excludedDates:undefined,overrides:undefined}];}
-function conflicts(events){const timed=events.filter(e=>e.start&&e.end),result=[];for(let i=0;i<timed.length;i++)for(let j=i+1;j<timed.length;j++)if(timed[i].start<timed[j].end&&timed[j].start<timed[i].end)result.push([timed[i].id,timed[j].id]);return result;}
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>生活規劃工作台｜College OS</title>
+    <style>:root {
+  font-family: system-ui, "Microsoft JhengHei", sans-serif;
+  color: #243d38;
+  background: #f4f6f2;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 20px 5%;
+  border-bottom: 1px solid #dce4da;
+  background: white;
+}
+header span {
+  flex: 1;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+a {
+  color: #28685a;
+}
+main {
+  max-width: 1440px;
+  margin: auto;
+  padding: 22px 28px 56px;
+}
+h1 {
+  font-size: clamp(28px, 4vw, 46px);
+  margin: 8px 0;
+}
+h2 {
+  font-size: 21px;
+}
+p {
+  line-height: 1.7;
+  color: #5b6c64;
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 3px;
+  color: #35735e;
+}
+.page-intro { margin-top: 0; }
+button,
+.button {
+  border: 1px solid #cddbd0;
+  background: #fff;
+  color: #244c3c;
+  padding: 10px 16px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 14px;
+}
+button:hover {
+  background: #e5eee5;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+nav,
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+nav { margin: 14px 0; }
+.schedule-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 10px 12px;
+  border: 1px solid #e0e5de;
+  border-radius: 14px;
+  background: rgb(250 251 249 / 94%);
+  backdrop-filter: blur(14px);
+}
+.range-controls, .primary-actions { display: flex; align-items: center; gap: 8px; }
+.range-controls button { min-width: 40px; }
+.range-controls select { min-width: 112px; }
+.primary-actions button:last-child { background: #285d4b; color: white; border-color: #285d4b; }
+.export-tools { padding: 12px 16px; margin: 10px 0; }
+.export-tools .toolbar { margin: 12px 0 0; align-items: end; }
+.onboarding { padding: 12px 16px; margin: 12px 0; }
+#hub-capture { padding: 18px 20px; margin: 16px 0; }
+#hub-capture h2 { margin: 0; }
+#hub-capture > p { margin: 6px 0; }
+#hub-capture .toolbar { margin: 10px 0; }
+#hub-command { min-height: 44px; resize: vertical; }
+.panel {
+  padding: 24px;
+  background: white;
+  border: 1px solid #dce4da;
+  border-radius: 16px;
+  margin: 18px 0;
+}
+input,
+select {
+  padding: 10px;
+  border: 1px solid #cad8cc;
+  border-radius: 7px;
+  max-width: 100%;
+  font: inherit;
+  background: white;
+}
+label {
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+  font-size: 13px;
+}
+label:has(input[type="checkbox"]) {
+  flex-direction: row;
+  align-items: center;
+}
+form,
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+}
+#settings-form {
+  display: block;
+}
+#settings-form .form-grid {
+  margin: 20px 0;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+}
+.metric {
+  background: #e6eee5;
+  border-radius: 14px;
+  padding: 20px;
+}
+.metric strong {
+  display: block;
+  font-size: 30px;
+  margin-top: 10px;
+}
+.day {
+  border-top: 1px solid #e2e8e0;
+  padding: 15px 0;
+}
+#schedule.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 14px;
+}
+#schedule.week-grid > .day.panel {
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+#schedule.week-grid .day h3 { font-size: 14px; }
+#schedule.week-grid .block { display: block; padding: 8px; font-size: 12px; }
+#schedule.week-grid .block button { margin-top: 6px; }
+.fixed-event { border-left-color: #9aa89e; background: #f1f3f0; color: #526159; }
+.calendar-date,
+#schedule .block .event-open {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  border-radius: 4px;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.calendar-date { font-weight: 700; }
+#schedule .event-open { width: 100%; overflow-wrap: anywhere; }
+.calendar-date:hover, #schedule .event-open:hover { text-decoration: underline; }
+.calendar-date:focus-visible, #schedule .event-open:focus-visible {
+  outline: 2px solid #2b6752;
+  outline-offset: 4px;
+}
+.schedule-diagnostics { margin-top: 20px; }
+.schedule-diagnostics > .panel { margin: 12px 0; }
+.day h3 {
+  margin: 4px 0 12px;
+}
+.block {
+  padding: 12px;
+  border-left: 3px solid #4e8168;
+  background: #f2f6ee;
+  margin: 7px 0;
+}
+.warning {
+  border-left: 3px solid #b97740;
+  background: #fff4e7;
+  padding: 12px;
+  margin: 10px 0;
+}
+.task {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.task .content {
+  flex: 1;
+  min-width: 200px;
+}
+.task p {
+  margin: 4px 0;
+}
+.timer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+.timer p {
+  width: 100%;
+}
+#timer {
+  font-size: 28px;
+}
+#days .form-grid {
+  margin: 12px 0;
+}
+[hidden] {
+  display: none !important;
+}
+#status {
+  color: #9b5027;
+}
+@media (max-width: 700px) {
+  header {
+    flex-wrap: wrap;
+  }
+  .metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  main {
+    padding: 20px 14px;
+  }
+  .panel {
+    padding: 18px;
+  }
+}
+@media (max-width: 1100px) {
+  #schedule.week-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .schedule-toolbar { position: static; }
+  #schedule.week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .range-controls { width: 100%; flex-wrap: wrap; }
+  .range-controls input { flex: 1; }
+}
+@media (max-width: 420px) {
+  #schedule.week-grid { grid-template-columns: 1fr; }
+}
+@media print {
+  header,
+  nav,
+  button,
+  .timer {
+    display: none;
+  }
+  section[hidden] {
+    display: none;
+  }
+  body {
+    background: white;
+  }
+  .panel,
+  .metric {
+    break-inside: avoid;
+  }
+}
+
+nav .active {
+  background: #285d4b;
+  color: white;
+  border-color: #285d4b;
+}
+.task-advanced {
+  grid-column: 1/-1;
+  border-top: 1px solid #e0e7dd;
+  padding-top: 12px;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.task-advanced .form-grid {
+  margin-top: 16px;
+}
+.block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+}
+.block button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.schedule-week .day {
+  margin: 14px 0;
+}
+small {
+  color: #617168;
+  line-height: 1.7;
+}
+@media print {
+  details {
+    display: block;
+  }
+  details > summary {
+    font-size: 16px;
+  }
+}
+
+textarea {
+  width: 100%;
+  font: inherit;
+  padding: 12px;
+  border: 1px solid #cad8cc;
+  border-radius: 8px;
+  resize: vertical;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+section {
+  scroll-margin-top: 20px;
+}
+.wide {
+  grid-column: 1/-1;
+}
+.hub-chart {
+  margin-top: 20px;
+}
+.hub-chart svg {
+  width: 100%;
+  max-height: 220px;
+}
+.hub-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.hub-table th,
+.hub-table td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid #dce4da;
+}
+.hub-chart-row {
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.hub-track {
+  grid-column: 1/-1;
+  background: #edf1eb;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.hub-track span {
+  display: block;
+  height: 100%;
+}
+.hub-donut {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  margin: 20px auto;
+  position: relative;
+}
+.hub-donut:after {
+  content: "";
+  position: absolute;
+  inset: 35px;
+  border-radius: 50%;
+  background: white;
+}
+.hub-heat {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+.hub-record {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #edf1eb;
+}
+.hub-record span {
+  flex: 1;
+  min-width: 120px;
+  overflow-wrap: anywhere;
+}
+.hub-record button {
+  padding: 6px 10px;
+}
+.hub-pools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.hub-pool {
+  background: #f6f8f4;
+  padding: 12px;
+  border-radius: 12px;
+}
+.hub-pool h3 {
+  margin-top: 0;
+}
+form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#hub-status {
+  color: #a14b42;
+}
+button[data-tab].active {
+  background: #e5eee5;
+  color: #244c3c;
+}
+@media (max-width: 650px) {
+  header {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  header span {
+    display: none;
+  }
+  .hub-pools {
+    grid-template-columns: 1fr;
+  }
+  main {
+    padding: 24px 14px;
+  }
+  .panel {
+    padding: 18px;
+  }
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media print {
+  form,
+  textarea,
+  #hub-capture,
+  #hub-status,
+  nav,
+  .toolbar {
+    display: none !important;
+  }
+  .hub-donut,
+  .hub-track span,
+  .hub-chart-row {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  details > summary {
+    display: none;
+  }
+  section[hidden] {
+    display: block;
+  }
+  .hub-table thead {
+    display: table-header-group;
+  }
+  .hub-record,
+  .hub-chart {
+    break-inside: avoid;
+  }
+  #schedule .panel,
+  .hub-pool {
+    break-inside: auto;
+  }
+}
+
+.hub-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.hub-bento > .panel {
+  min-width: 0;
+}
+#health-hub {
+  grid-column: 1/-1;
+}
+.hub-bento .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 1000px) {
+  .hub-bento {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  .hub-bento {
+    display: block;
+  }
+}
+
+@media print {
+  body.print-schedule main > section:not(#overview),
+  body.print-schedule .hub-bento,
+  body.print-schedule main > details {
+    display: none !important;
+  }
+}
+</style>
+  </head>
+  <body>
+    <header>
+      <a href="https://bobrta.github.io/college-life-web/">← 學習與生活</a><span>COLLEGE OS / 時間規劃</span
+      ><button id="undo">復原</button><button id="redo">重做</button
+      ><button id="backup">匯出備份</button
+      ><label class="button"
+        >匯入備份<input
+          id="restore"
+          type="file"
+          accept="application/json"
+          hidden
+      /></label>
+    </header>
+    <main>
+      <p class="eyebrow">先留休息，再承諾工作</p>
+      <h1>生活規劃</h1>
+      <p class="page-intro">行程、任務、財務與恢復，在同一個工作區安排。</p>
+      <nav>
+        <button data-tab="overview" class="active" aria-pressed="true">
+          排程總覽</button
+        ><button data-tab="goals">月／季目標</button
+        ><button data-tab="tasks">任務收件箱</button
+        ><button data-tab="settings">時間與休息</button
+        ><button data-tab="tools">計算工具</button>
+      </nav>
+      <p id="status" role="status"></p>
+      <details class="panel onboarding">
+        <summary>第一次使用：四步完成一週規劃</summary>
+        <ol>
+          <li>到「時間與休息」填可用時段、每日工時上限與休息規則。</li>
+          <li>讀取原日曆固定事件；補課、考試、交通與週日規劃另行加入。</li>
+          <li>到「任務收件箱」填剩餘工時、期限、完成條件，選要推進的工作。</li>
+          <li>
+            回「排程總覽」檢查未排入工作；調整後確認，執行時開啟專注計時。
+          </li>
+        </ol>
+        <p>
+          計時扣除的是投入時間，剩餘估時仍需你校正；投入時間不等於學會。估時歸零後仍要核對完成條件，再按「確認完成」。每次週日規劃後匯出備份。
+        </p>
+      </details>
+      <section id="overview">
+        <div class="schedule-toolbar">
+          <div class="range-controls">
+            <button id="previous-period" type="button" aria-label="上一個週期">‹</button>
+            <select id="period" aria-label="規劃範圍">
+              <option value="day">日</option>
+              <option value="week">週計畫</option>
+              <option value="month">月計畫</option>
+              <option value="quarter">季計畫</option>
+              <option value="year">年計畫</option>
+            </select>
+            <input id="anchor" type="date" aria-label="規劃日期" />
+            <button id="next-period" type="button" aria-label="下一個週期">›</button>
+            <button id="go-today" type="button">今天</button>
+          </div>
+          <div class="primary-actions">
+            <button id="replan">重新計算</button>
+            <button id="confirm-plan">確認排程</button>
+          </div>
+        </div>
+        <details class="panel export-tools">
+          <summary>匯出與列印</summary>
+          <div class="toolbar">
+            <label>匯出版本<select id="export-plan-source">
+              <option value="suggested">目前建議</option>
+              <option value="confirmed">已確認快照</option>
+            </select></label>
+            <label><input id="export-fixed" type="checkbox" checked />含固定行程</label>
+            <button id="export-ics">匯出日曆 ICS</button>
+            <label>PDF內容<select id="print-scope">
+              <option value="schedule">行程與時間分析</option>
+              <option value="all">全部，含財務與活動</option>
+            </select></label>
+            <button id="print">列印／存成 PDF</button>
+          </div>
+        </details>
+        <p id="range"></p>
+        <div id="metrics" class="metrics"></div>
+        <div id="schedule"></div>
+        <section id="hub-capture" class="panel">
+          <h2>快速輸入</h2>
+          <p id="hub-summary"></p>
+          <p>Cmd／Ctrl＋K 跳到輸入欄。先預覽再加入；可一次排程並登記預定費用。</p>
+          <label for="hub-command">指令或 JSON</label>
+          <textarea id="hub-command" rows="1" maxlength="10000" placeholder="/cal 2026-10-15 14:00-15:00 [寫報告] $150"></textarea>
+          <div class="toolbar">
+            <button id="command-preview" type="button">預覽資料</button>
+            <button id="command-apply" type="button" disabled>確認加入</button>
+            <details class="quick-links"><summary>跳到其他功能</summary>
+              <button data-hub-jump="finance-hub">財務</button>
+              <button data-hub-jump="decision-hub">決策</button>
+              <button data-hub-jump="health-hub">活動與恢復</button>
+            </details>
+          </div>
+          <pre id="command-result" aria-live="polite"></pre>
+          <p id="hub-status" role="status"></p>
+          <details><summary>指令範例</summary>
+            <pre>/cal 2026-10-15 14:00-15:00 [寫報告] $150
+/fin -150 #餐費 [午餐]
+/fin 2026-10-20 -300 #交通 [考試交通] !預定
+/task [管理學報告] 2h -> must
+/fit 20m #walk [散步]</pre>
+            <p>預定支出轉為實際後不重複扣款；只有「正在做」的工作會自動排程。</p>
+          </details>
+        </section>
+        <details class="panel schedule-diagnostics">
+          <summary>容量檢查、專注計時與已確認排程</summary>
+          <div class="panel">
+            <h2>排不進去的工作</h2>
+            <p>超出容量的工作保留在這裡，不占用休息。</p>
+            <div id="warnings"></div>
+          </div>
+          <div class="panel timer">
+            <h2>專注與強制休息</h2>
+            <select id="focus-task" aria-label="計時任務"></select
+            ><strong id="timer">尚未開始</strong
+            ><button id="start">開始專注</button
+            ><button id="stop">結束並記錄已用時間</button
+            ><small>專注結束後須完成休息，才能開始下一段。</small>
+          </div>
+          <h2>最近確認的排程</h2>
+          <p id="confirmed-note"></p>
+          <div id="confirmed"></div>
+        </details>
+        <div class="panel">
+          <h2>時間分析</h2>
+          <label
+            >圖表<select id="time-chart-kind">
+              <option value="bars">每日建議時數</option>
+              <option value="donut">工作分類比例</option>
+              <option value="line">實際投入時數趨勢</option>
+              <option value="heat">每日建議時數熱圖</option>
+              <option value="table">時數明細</option>
+            </select></label
+          >
+          <p>
+            分類比例只統計已排工作，不含固定課程；建議排程只包含今天起的區段；實際投入使用計時紀錄，未記錄不等於沒有學習。
+          </p>
+          <div id="time-chart" class="hub-chart"></div>
+        </div>
+      </section>
+      <section id="tasks">
+        <div class="panel">
+          <h2>新增一件工作</h2>
+          <form id="task-form">
+            <label
+              >工作名稱<input name="title" required maxlength="200" /></label
+            ><label
+              >剩餘工時（小時）<input
+                name="hours"
+                type="number"
+                min="0"
+                max="1000"
+                step="any"
+                required /></label
+            ><label
+              >截止日期（未知留白）<input name="deadline" type="date" /></label
+            ><label
+              >完成條件<input
+                name="outcome"
+                maxlength="300"
+                placeholder="例如：指定題庫做完並訂正"
+            /></label>
+            <details class="task-advanced">
+              <summary>優先順序與目標（選填）</summary>
+              <div class="form-grid">
+                <label
+                  >重要性<select name="priority">
+                    <option value="3">高</option>
+                    <option value="2" selected>中</option>
+                    <option value="1">低</option>
+                  </select></label
+                ><label
+                  >所屬月／季目標<select
+                    name="goal"
+                    id="task-goal"
+                  ></select></label
+                ><label
+                  >分類<select name="category">
+                    <option value="study">學習</option>
+                    <option value="work">報告／工作</option>
+                    <option value="exercise">運動</option>
+                    <option value="personal">生活</option>
+                  </select></label
+                ><label
+                  >前置任務<select name="depends" id="depends"></select></label
+                ><label
+                  ><input name="active" type="checkbox" checked />
+                  本週期要推進</label
+                >
+              </div>
+            </details>
+            <button id="task-submit">加入工作</button
+            ><button id="cancel-edit" type="button" hidden>取消修改</button>
+          </form>
+        </div>
+        <div id="task-list"></div>
+      </section>
+      <section id="settings">
+        <form id="settings-form" class="panel">
+          <h2>容量與保護規則</h2>
+          <p>
+            每天可填多個工作時段及工時上限。系統在時段內扣固定事件、安排休息，再保留緩衝；工時上限已扣課程者不重複扣。
+          </p>
+          <div id="days"></div>
+          <div class="form-grid">
+            <label
+              >每日主要工作上限<input
+                name="limit"
+                type="number"
+                min="1"
+                max="10"
+                required /></label
+            ><label
+              >緩衝 %<input
+                name="buffer"
+                type="number"
+                min="0"
+                max="80"
+                required /></label
+            ><label
+              >每次專注分鐘<input
+                name="focus"
+                type="number"
+                min="5"
+                max="180"
+                required /></label
+            ><label
+              >休息分鐘<input
+                name="rest"
+                type="number"
+                min="1"
+                max="60"
+                required /></label
+            ><label
+              >最小工作區段（分鐘）<input
+                name="minBlock"
+                type="number"
+                min="5"
+                max="180"
+                required
+            /></label>
+          </div>
+          <button>保存並重新計算</button>
+        </form>
+        <div class="panel">
+          <h2>單日例外：補課、考試與狀態變動</h2>
+          <form id="override-form">
+            <label>日期<input name="date" type="date" required /></label
+            ><label
+              >可用時段（空白＝整天不排）<input
+                name="windows"
+                placeholder="18:30-20:30,21:00-22:15" /></label
+            ><label
+              >當日工時上限（小時）<input
+                name="hours"
+                type="number"
+                min="0"
+                max="24"
+                step="0.25"
+                required /></label
+            ><button>保存單日例外</button>
+          </form>
+          <div id="overrides"></div>
+        </div>
+        <div class="panel">
+          <h2>固定事件／保護休息</h2>
+          <button id="import-existing" type="button">同步兩個日曆</button>
+          <p>
+            合併固定行程到主日曆並讀回課程、生活、休息與考試；同 ID 衝突保留主日曆版本。此操作不刪除資料，也不會發布建議讀書時段。
+          </p>
+          <form id="event-form">
+            <label>名稱<input name="title" maxlength="120" required /></label
+            ><label>日期<input name="date" type="date" required /></label
+            ><label>開始<input name="start" type="time" required /></label
+            ><label>結束<input name="end" type="time" required /></label
+            ><label
+              ><input name="repeat" type="checkbox" />
+              每週同一天（至本季末）</label
+            ><button id="event-submit">加入固定事件</button>
+            <button id="event-cancel-edit" type="button" hidden>取消編輯</button>
+          </form>
+          <p id="event-edit-note" role="status" hidden></p>
+          <p>準備和交通請包含在事件時間內。重疊事件合併扣除。</p>
+          <div id="events"></div>
+        </div>
+      </section>
+      <section id="goals">
+        <div class="panel">
+          <h2>月與季：先定成果，再拆工作</h2>
+          <p>
+            目標與任務共用資料；新增任務時選擇所屬目標。完成率依任務件數呈現，不代表學習掌握度。
+          </p>
+          <form id="goal-form">
+            <label
+              >成果名稱<input
+                name="title"
+                maxlength="200"
+                required
+                placeholder="例如：完成特選申請" /></label
+            ><label
+              >週期<select name="period">
+                <option value="month">月目標</option>
+                <option value="quarter">季目標</option>
+              </select></label
+            ><label
+              >所屬月份／季度日期<input
+                name="date"
+                type="date"
+                required /></label
+            ><button>加入目標</button>
+          </form>
+          <div id="goal-list"></div>
+        </div>
+        <div class="panel">
+          <h2>實際投入紀錄</h2>
+          <p id="log-summary"></p>
+          <div id="log-list"></div>
+        </div>
+      </section>
+      <section id="tools">
+        <div class="panel">
+          <h2>時間估算工具</h2>
+          <label
+            >計算方式<select id="calc-type">
+              <option value="pert">PERT：樂觀／最可能／悲觀（小時）</option>
+              <option value="video">
+                影片：長度（分鐘）／倍速／理解與練習（分鐘）
+              </option>
+              <option value="quiz">題庫：題數／每題分鐘／訂正總分鐘</option>
+              <option value="saving">
+                自動化：使用次數／每次省分鐘／建置與維護總分鐘
+              </option>
+            </select></label
+          >
+          <div class="form-grid">
+            <label
+              ><span id="calc-a-label">樂觀時間（小時）</span
+              ><input
+                id="a"
+                type="number"
+                min="0"
+                step="any"
+                value="1" /></label
+            ><label
+              ><span id="calc-b-label">最可能時間（小時）</span
+              ><input
+                id="b"
+                type="number"
+                min="0"
+                step="any"
+                value="2" /></label
+            ><label
+              ><span id="calc-c-label">悲觀時間（小時）</span
+              ><input id="c" type="number" min="0" step="any" value="4"
+            /></label>
+          </div>
+          <button id="calculate">計算</button>
+          <p id="calc-result" role="status"></p>
+        </div>
+        <div class="panel">
+          <h2>計算原則</h2>
+          <p>
+            容量＝可用工作區段與每日上限取較小值
+            ×（1－緩衝比例）。利用率＝需求÷容量。缺口＝未排入的剩餘工時。每日件數按不同主要任務計算。
+          </p>
+          <p>
+            週日固定規劃可在固定事件建立每週重複行程。月／季沿用每週可用時段，是情境估算，不代表已確認長期安排。無期限工作排在有期限工作之後。資料保存在此瀏覽器，跨裝置請匯出／匯入備份。
+          </p>
+        </div>
+      </section>
+      <div class="hub-bento">
+        <section id="finance-hub" class="panel">
+          <h2>財務與預定支出</h2>
+          <p>
+            台幣總帳，期初餘額加實際收支。這一版不處理帳戶轉帳、借款及多幣別。
+          </p>
+          <div id="money-metrics" class="metrics"></div>
+          <details>
+            <summary>餘額、儲備與本期預算</summary>
+            <form id="money-settings" class="form-grid">
+              <label
+                >記帳開始前餘額<input
+                  name="opening"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  required /></label
+              ><label
+                >另外保留的儲備金<input
+                  name="reserve"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  required /></label
+              ><label
+                >選定期間支出預算<input
+                  name="budget"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  required /></label
+              ><button>保存設定</button>
+            </form>
+            <p>
+              預算依目前選定的日期範圍分開保存。儲備金不要重複包含已列入預定支出的費用。
+            </p>
+          </details>
+          <form id="money-form" class="form-grid">
+            <label>日期<input name="date" type="date" required /></label
+            ><label
+              >類型<select name="type">
+                <option value="expense">支出</option>
+                <option value="income">收入</option>
+              </select></label
+            ><label
+              >狀態<select name="status">
+                <option value="actual">實際已發生</option>
+                <option value="planned">預定</option>
+              </select></label
+            ><label
+              >金額<input
+                name="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required /></label
+            ><label
+              >分類<input
+                name="category"
+                maxlength="60"
+                value="餐費"
+                required /></label
+            ><label>備註<input name="note" maxlength="300" /></label
+            ><button>加入收支</button>
+          </form>
+          <p id="money-warning"></p>
+          <label
+            >圖表<select id="money-chart-kind">
+              <option value="line">每日預測餘額</option>
+              <option value="donut">本期支出分類比例</option>
+              <option value="bars">本期分類支出金額</option>
+              <option value="table">預測餘額明細</option>
+            </select></label
+          >
+          <div id="money-chart" class="hub-chart"></div>
+          <details>
+            <summary>本期紀錄與過期預定（最多顯示100筆）</summary>
+            <div id="money-list"></div>
+          </details>
+        </section>
+        <section id="decision-hub" class="panel">
+          <h2>資源與決策</h2>
+          <form id="resource-form" class="form-grid">
+            <label class="wide"
+              >現有資源：課本、課程、工具、協助者<textarea
+                name="resources"
+                rows="3"
+                maxlength="2000"
+              ></textarea></label
+            ><label
+              >進行中上限<select name="wipLimit">
+                <option value="1">1件</option>
+                <option value="2">2件</option>
+                <option value="3" selected>3件</option>
+                <option value="4">4件</option>
+              </select></label
+            ><button>保存資源與上限</button>
+          </form>
+          <p id="resource-summary"></p>
+          <form id="decision-form" class="form-grid">
+            <label>事項<input name="title" maxlength="200" required /></label
+            ><label
+              >狀態<select name="pool">
+                <option value="must">一定要做</option>
+                <option value="want">想做</option>
+                <option value="doing">正在做</option>
+              </select></label
+            ><label
+              >估計工時<input
+                name="hours"
+                type="number"
+                min="0.01"
+                max="1000"
+                step="any"
+                value="1"
+                required /></label
+            ><label
+              >預估成本<input
+                name="cost"
+                type="number"
+                min="0"
+                step="0.01"
+                value="0"
+                required /></label
+            ><label
+              >重要程度1–5<input
+                name="importance"
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value="3"
+                required /></label
+            ><label
+              >緊急程度1–5<input
+                name="urgency"
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value="3"
+                required /></label
+            ><label>期限<input name="deadline" type="date" /></label
+            ><button>新增事項與關聯任務</button>
+          </form>
+          <p>
+            必做和想做先留在任務收件箱；按「開始推進」才參與排程。評分＝（重要×3＋緊急×2）÷5；仍須核對期限、費用與前置條件。
+          </p>
+          <div id="decision-list" class="hub-pools"></div>
+          <label
+            >圖表<select id="decision-chart-kind">
+              <option value="bars">重要與緊急加權排序</option>
+              <option value="donut">事項狀態分布</option>
+              <option value="heat">各事項估時分布</option>
+              <option value="table">優先分數明細</option>
+            </select></label
+          >
+          <div id="decision-chart" class="hub-chart"></div>
+        </section>
+        <section id="health-hub" class="panel">
+          <h2>活動與恢復紀錄</h2>
+          <p>
+            先記實際活動和主觀狀況。系統不把運動當作精力加分，也不自動生成高強度訓練課表。
+          </p>
+          <form id="health-form" class="form-grid">
+            <label>日期<input name="date" type="date" required /></label
+            ><label
+              >活動<select name="kind">
+                <option value="walk">散步</option>
+                <option value="run">跑步</option>
+                <option value="strength">肌力</option>
+                <option value="stretch">伸展</option>
+                <option value="rest">恢復</option>
+              </select></label
+            ><label
+              >活動分鐘<input
+                name="minutes"
+                type="number"
+                min="0"
+                max="600"
+                step="1"
+                value="20"
+                required /></label
+            ><label
+              >睡眠小時（0＝未填）<input
+                name="sleep"
+                type="number"
+                min="0"
+                max="24"
+                step="any"
+                value="0"
+                required /></label
+            ><label
+              >主觀疲勞1–5<input
+                name="fatigue"
+                type="number"
+                min="1"
+                max="5"
+                step="1"
+                value="3"
+                required /></label
+            ><label>備註<input name="note" maxlength="300" /></label
+            ><button>保存紀錄</button>
+          </form>
+          <p id="health-summary"></p>
+          <label
+            >圖表<select id="health-chart-kind">
+              <option value="bars">每日活動分鐘</option>
+              <option value="donut">活動種類比例</option>
+              <option value="line">已填睡眠趨勢</option>
+              <option value="table">活動分鐘明細</option>
+            </select></label
+          >
+          <div id="health-chart" class="hub-chart"></div>
+          <details>
+            <summary>本期活動明細（最多顯示50筆）</summary>
+            <div id="health-list"></div>
+          </details>
+        </section>
+      </div>
+    </main>
+    <script type="module">const __modules=[];
+__modules[0]=(()=>{
+// Pure local-first calculations. Money is always stored as integer cents.
+function hubDate(value) {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(value)) &&
+    new Date(value + "T12:00:00Z").toISOString().slice(0, 10) === value
+  );
+}
+function hubMoney(value) {
+  const text = String(value).trim();
+  if (!/^\d+(\.\d{1,2})?$/.test(text))
+    throw Error("金額需為非負數，最多兩位小數");
+  const [whole, fraction = ""] = text.split("."),
+    cents = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+  if (!Number.isSafeInteger(cents) || cents > 1e11) throw Error("金額超出範圍");
+  return cents;
+}
+function freshHub() {
+  return {
+    version: 1,
+    opening: 0,
+    reserve: 0,
+    budget: 0,
+    resources: "",
+    budgets: {},
+    wipLimit: 3,
+    transactions: [],
+    decisions: [],
+    health: [],
+  };
+}
+function validateHub(hub) {
+  const money = (n) => Number.isSafeInteger(n) && n >= 0 && n <= 1e11;
+  if (
+    !hub ||
+    hub.version !== 1 ||
+    ![hub.opening, hub.reserve, hub.budget].every(money) ||
+    typeof hub.resources !== "string" ||
+    hub.resources.length > 2000 ||
+    !Number.isInteger(hub.wipLimit) ||
+    hub.wipLimit < 1 ||
+    hub.wipLimit > 4
+  )
+    throw Error("生活工作台設定不正確");
+  if (
+    hub.budgets !== undefined &&
+    (!hub.budgets ||
+      typeof hub.budgets !== "object" ||
+      Array.isArray(hub.budgets) ||
+      Object.entries(hub.budgets).some(
+        ([key, value]) => {
+          if (typeof key !== "string") return true;
+          const parts = key.split("/");
+          if (parts.length !== 2) return true;
+          const [start, end] = parts;
+          return !hubDate(start) || !hubDate(end) || end < start || !money(value);
+        },
+      ))
+  )
+    throw Error("期間預算不正確");
+  const ids = new Set();
+  for (const key of ["transactions", "decisions", "health"]) {
+    if (!Array.isArray(hub[key]) || hub[key].length > 5000)
+      throw Error("生活紀錄格式或筆數不正確");
+    for (const row of hub[key]) {
+      if (
+        !row ||
+        typeof row.id !== "string" ||
+        !row.id.trim() ||
+        row.id.length > 120 ||
+        ids.has(row.id)
+      )
+        throw Error("生活紀錄ID不正確或重複");
+      ids.add(row.id);
+    }
+  }
+  for (const row of hub.transactions)
+    if (
+      !hubDate(row.date) ||
+      !["income", "expense"].includes(row.type) ||
+      !["actual", "planned"].includes(row.status) ||
+      !money(row.cents) ||
+      row.cents === 0 ||
+      typeof row.category !== "string" ||
+      !row.category.trim() ||
+      row.category.length > 60 ||
+      typeof row.note !== "string" ||
+      row.note.length > 300 ||
+      (row.eventId !== undefined && typeof row.eventId !== "string")
+    )
+      throw Error("收支資料不正確");
+  for (const row of hub.decisions)
+    if (
+      typeof row.title !== "string" ||
+      !row.title.trim() ||
+      row.title.length > 200 ||
+      !["must", "want", "doing", "done"].includes(row.pool) ||
+      !Number.isFinite(row.hours) ||
+      row.hours <= 0 ||
+      row.hours > 1000 ||
+      !money(row.cents) ||
+      ![row.importance, row.urgency].every(
+        (n) => Number.isInteger(n) && n >= 1 && n <= 5,
+      ) ||
+      (row.deadline !== "" && !hubDate(row.deadline)) ||
+      (row.taskId !== undefined && (typeof row.taskId !== "string" || !row.taskId.trim()))
+    )
+      throw Error("決策資料不正確");
+  if (hub.decisions.filter((r) => r.pool === "doing").length > hub.wipLimit)
+    throw Error("進行中工作超過設定上限，請先暫停一件");
+  for (const row of hub.health)
+    if (
+      !hubDate(row.date) ||
+      !["walk", "run", "strength", "stretch", "rest"].includes(row.kind) ||
+      !Number.isInteger(row.minutes) ||
+      row.minutes < 0 ||
+      row.minutes > 600 ||
+      !Number.isFinite(row.sleep) ||
+      row.sleep < 0 ||
+      row.sleep > 24 ||
+      !Number.isInteger(row.fatigue) ||
+      row.fatigue < 1 ||
+      row.fatigue > 5 ||
+      typeof row.note !== "string" ||
+      row.note.length > 300
+    )
+      throw Error("運動與恢復紀錄不正確");
+  return hub;
+}
+function hubFinance(hub, asOf, dates) {
+  validateHub(hub);
+  if (!hubDate(asOf) || !Array.isArray(dates) || dates.some((d) => !hubDate(d)))
+    throw Error("財務日期不正確");
+  const signed = (r) => (r.type === "income" ? r.cents : -r.cents);
+  const actual = hub.transactions.filter(
+    (r) => r.status === "actual" && r.date <= asOf,
+  );
+  const balance = actual.reduce((n, r) => n + signed(r), hub.opening);
+  const pending = hub.transactions.filter((r) => r.status === "planned");
+  const overdue = pending.filter((r) => r.date < asOf);
+  const future = hub.transactions.filter(
+    (r) => r.status === "planned" || r.date > asOf,
+  );
+  const horizon = [...new Set(dates.filter((d) => d >= asOf))].sort();
+  const forecast = horizon.map((date) => ({
+    date,
+    value: future
+      .filter((r) => r.date <= date)
+      .reduce((n, r) => n + signed(r), balance),
+  }));
+  const set = new Set(dates),
+    rows = actual.filter((r) => set.has(r.date)),
+    income = rows
+      .filter((r) => r.type === "income")
+      .reduce((n, r) => n + r.cents, 0),
+    expense = rows
+      .filter((r) => r.type === "expense")
+      .reduce((n, r) => n + r.cents, 0);
+  const categories = new Map();
+  for (const r of rows)
+    if (r.type === "expense")
+      categories.set(r.category, (categories.get(r.category) || 0) + r.cents);
+  const last = horizon.at(-1) || asOf,
+    committed = pending
+      .filter((r) => r.type === "expense" && r.date <= last)
+      .reduce((n, r) => n + r.cents, 0);
+  return {
+    balance,
+    income,
+    expense,
+    committed,
+    available: balance - hub.reserve - committed,
+    forecast,
+    overdue,
+    categories: [...categories].map(([label, value]) => ({ label, value })),
+    budgetRemaining:
+      (hub.budgets?.[dates[0] + "/" + dates.at(-1)] || 0) - expense,
+  };
+}
+function hubDecisionRows(hub, taskList) {
+  return hub.decisions.map((row) => ({
+    ...row,
+    pool: taskList.find((t) => t.id === row.taskId)?.done ? "done" : row.pool,
+    score: (row.importance * 3 + row.urgency * 2) / 5,
+  }));
+}
+function parseHubCommand(text, baseDate) {
+  if (typeof text !== "string" || text.length > 10000 || !hubDate(baseDate))
+    throw Error("指令或日期不正確");
+  if (text.trim().startsWith("{")) {
+    const obj = JSON.parse(text);
+    if (
+      !obj ||
+      typeof obj !== "object" ||
+      Array.isArray(obj) ||
+      !["cal", "fin", "task", "fit"].includes(obj.kind)
+    )
+      throw Error("JSON需要kind：cal、fin、task或fit");
+    return obj;
+  }
+  const source = text.trim(),
+    title = source.match(/\[([^\]]+)\]/)?.[1],
+    day = source.match(/\b\d{4}-\d{2}-\d{2}\b/)?.[0] || baseDate;
+  if (source.startsWith("/cal ")) {
+    const times = source.match(/\b([0-2]\d:[0-5]\d)-([0-2]\d:[0-5]\d)\b/),
+      cost = source.match(/\$(\d+(?:\.\d{1,2})?)(?![\d.])/);
+    if (!title || !times)
+      throw Error("行程格式：/cal 2026-10-15 14:00-15:00 [寫報告] $150");
+    const result={
+      kind: "cal",
+      date: day,
+      start: times[1],
+      end: times[2],
+      title,
+      cost: cost ? cost[1] : "0",
+    };
+    if(!hubDate(day)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(result.start)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(result.end)||result.end<=result.start)throw Error("行程日期或時段不正確");
+    return result;
+  }
+  if (source.startsWith("/fin ")) {
+    const amount = source.match(/^\/fin\s+([+-])(\d+(?:\.\d{1,2})?)(?=\s|$)/),
+      category = source.match(/#([^\s\[]+)/)?.[1] || "其他";
+    if (!amount) throw Error("記帳格式：/fin -150 #餐費 [午餐]");
+    if(!hubDate(day))throw Error("收支日期不正確");
+    return {
+      kind: "fin",
+      date: day,
+      type: amount[1] === "+" ? "income" : "expense",
+      amount: amount[2],
+      category,
+      note: title || "",
+      status: source.includes("!預定") ? "planned" : "actual",
+    };
+  }
+  if (source.startsWith("/task ")) {
+    if (!title) throw Error("任務格式：/task [管理學報告] 2h -> must");
+    return {
+      kind: "task",
+      title,
+      hours: Number(source.match(/\b(\d+(?:\.\d+)?)h\b/)?.[1] || 1),
+      pool: source.match(/->\s*(must|want|doing)\b/)?.[1] || "want",
+      cost: source.match(/\$(\d+(?:\.\d{1,2})?)/)?.[1] || "0",
+      importance: 3,
+      urgency: 3,
+      deadline: "",
+    };
+  }
+  if (source.startsWith("/fit ")) {
+    const minutes = source.match(/\b(\d+)m\b/);
+    if (!minutes) throw Error("運動格式：/fit 20m #walk [散步]");
+    if(!hubDate(day))throw Error("活動日期不正確");
+    return {
+      kind: "fit",
+      date: day,
+      minutes: Number(minutes[1]),
+      activity:
+        source.match(/#(walk|run|strength|stretch|rest)\b/)?.[1] || "walk",
+      sleep: 0,
+      fatigue: 3,
+      note: title || "",
+    };
+  }
+  throw Error(
+    "請使用/cal、/fin、/task、/fit，或貼上JSON。日期須為YYYY-MM-DD；匯入前可先預覽",
+  );
+}
+
+return {hubDate,hubMoney,freshHub,validateHub,hubFinance,hubDecisionRows,parseHubCommand};
+})();
+__modules[1]=(()=>{
+const {freshHub,hubMoney,hubFinance,hubDecisionRows,parseHubCommand}=__modules[0];
+
+function mountLifestyle({ getState, commit, getPlan, getDates }) {
+  const doc = document,
+    by = (id) => doc.getElementById(id),
+    money = (n) =>
+      new Intl.NumberFormat("zh-TW", {
+        style: "currency",
+        currency: "TWD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(n / 100);
+  const todayDate = () =>
+    new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" });
+  const hub = () => getState().hub || freshHub();
+  let moneyHydration = null,
+    resourceHydration = null;
+  function hydrate(form, values, previous) {
+    const next = { ...previous };
+    for (const [key, value] of Object.entries(values)) {
+      const text = String(value);
+      if (
+        !previous ||
+        form.elements[key].value === previous[key] ||
+        form.elements[key].value === text
+      ) {
+        form.elements[key].value = text;
+        next[key] = text;
+      }
+    }
+    return next;
+  }
+  const make = (tag, text, cls) => {
+    const e = doc.createElement(tag);
+    if (text !== undefined) e.textContent = text;
+    if (cls) e.className = cls;
+    return e;
+  };
+  const button = (text, fn) => {
+    const e = make("button", text);
+    e.type = "button";
+    e.onclick = guard(fn);
+    return e;
+  };
+  const guard =
+    (fn) =>
+    (...args) => {
+      try {
+        by("hub-status").textContent = "";
+        fn(...args);
+      } catch (error) {
+        by("hub-status").textContent = error.message;
+      }
+    };
+  function persist(next) {
+    const candidate = structuredClone(next),
+      tasks = candidate.tasks;
+    if (candidate.hub)
+      for (const row of candidate.hub.decisions)
+        if (tasks.find((t) => t.id === row.taskId)?.done) row.pool = "done";
+    commit(candidate);
+  }
+  function updateHub(change) {
+    const next = structuredClone(getState());
+    next.hub = change(structuredClone(hub()));
+    persist(next);
+  }
+  const fval = (form, name) => form.elements[name].value;
+  const number = (form, name) => Number(fval(form, name));
+  const uid = () => crypto.randomUUID();
+  function appendRecord(key, row) {
+    if (key === "health" && row.date > todayDate())
+      throw Error("活動紀錄只能填已發生的日期；未來運動請加入行程");
+    updateHub((h) => {
+      h[key].push({ id: uid(), ...row });
+      return h;
+    });
+  }
+  function addDecision(input) {
+    const next = structuredClone(getState());
+    next.hub = structuredClone(hub());
+    for (const row of next.hub.decisions)
+      if (next.tasks.find((t) => t.id === row.taskId)?.done) row.pool = "done";
+    const taskId = uid(),
+      row = {
+        id: uid(),
+        taskId,
+        title: String(input.title).trim(),
+        pool: input.pool,
+        hours: Number(input.hours),
+        cents: hubMoney(input.cost || "0"),
+        importance: Number(input.importance),
+        urgency: Number(input.urgency),
+        deadline: input.deadline || "",
+      };
+    next.hub.decisions.push(row);
+    next.tasks.push({
+      id: taskId,
+      title: row.title,
+      remaining: row.hours * 60,
+      deadline: row.deadline,
+      priority: row.importance >= 4 ? 3 : row.importance >= 2 ? 2 : 1,
+      outcome: "",
+      depends: "",
+      goal: "",
+      active: row.pool === "doing",
+      done: false,
+    });
+    persist(next);
+  }
+  function applyCommand(obj) {
+    if (obj.kind === "cal") {
+      const next = structuredClone(getState()),
+        eventId = uid();
+      next.events.push({
+        id: eventId,
+        title: String(obj.title || "").trim(),
+        date: obj.date,
+        start: obj.start,
+        end: obj.end,
+        category: obj.category || "personal",
+      });
+      const cents = hubMoney(obj.cost || "0");
+      if (cents) {
+        next.hub = structuredClone(hub());
+        next.hub.transactions.push({
+          id: uid(),
+          date: obj.date,
+          type: "expense",
+          status: "planned",
+          cents,
+          category: "行程費用",
+          note: obj.title,
+          eventId,
+        });
+      }
+      persist(next);
+    } else if (obj.kind === "fin")
+      appendRecord("transactions", {
+        date: obj.date,
+        type: obj.type,
+        status: obj.status || "actual",
+        cents: hubMoney(obj.amount),
+        category: String(obj.category || "其他").trim(),
+        note: String(obj.note || ""),
+      });
+    else if (obj.kind === "task") addDecision(obj);
+    else if (obj.kind === "fit")
+      appendRecord("health", {
+        date: obj.date,
+        kind: obj.activity,
+        minutes: Number(obj.minutes),
+        sleep: Number(obj.sleep || 0),
+        fatigue: Number(obj.fatigue || 3),
+        note: String(obj.note || ""),
+      });
+  }
+  let pendingCommand = null;
+  by("command-preview").onclick = guard(() => {
+    pendingCommand = null;
+    by("command-apply").disabled = true;
+    pendingCommand = parseHubCommand(by("hub-command").value, todayDate());
+    by("command-result").textContent = JSON.stringify(pendingCommand, null, 2);
+    by("command-apply").disabled = false;
+  });
+  by("hub-command").oninput = () => {
+    pendingCommand = null;
+    by("command-apply").disabled = true;
+    by("command-result").textContent = "內容已修改，請重新預覽";
+  };
+  by("command-apply").onclick = guard(() => {
+    if (!pendingCommand) throw Error("請先預覽");
+    applyCommand(pendingCommand);
+    pendingCommand = null;
+    by("command-apply").disabled = true;
+    by("command-result").textContent = "已加入並保存";
+  });
+  doc.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      by("hub-command").focus();
+      by("hub-command").scrollIntoView?.({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  });
+  by("money-settings").onsubmit = guard((e) => {
+    e.preventDefault();
+    const f = e.target;
+    updateHub((h) => ({
+      ...h,
+      opening: hubMoney(fval(f, "opening")),
+      reserve: hubMoney(fval(f, "reserve")),
+      budgets: {
+        ...(h.budgets || {}),
+        [getDates()[0] + "/" + getDates().at(-1)]: hubMoney(fval(f, "budget")),
+      },
+    }));
+    by("hub-status").textContent =
+      "財務設定已保存；期初餘額應為記帳開始前的金額";
+  });
+  by("money-form").onsubmit = guard((e) => {
+    e.preventDefault();
+    const f = e.target;
+    appendRecord("transactions", {
+      date: fval(f, "date"),
+      type: fval(f, "type"),
+      status: fval(f, "status"),
+      cents: hubMoney(fval(f, "amount")),
+      category: fval(f, "category").trim(),
+      note: fval(f, "note").trim(),
+    });
+    f.elements.amount.value = "";
+    f.elements.note.value = "";
+  });
+  by("resource-form").onsubmit = guard((e) => {
+    e.preventDefault();
+    updateHub((h) => ({
+      ...h,
+      resources: fval(e.target, "resources"),
+      wipLimit: number(e.target, "wipLimit"),
+    }));
+  });
+  by("decision-form").onsubmit = guard((e) => {
+    e.preventDefault();
+    const f = e.target;
+    addDecision({
+      title: fval(f, "title"),
+      pool: fval(f, "pool"),
+      hours: fval(f, "hours"),
+      cost: fval(f, "cost"),
+      importance: fval(f, "importance"),
+      urgency: fval(f, "urgency"),
+      deadline: fval(f, "deadline"),
+    });
+    f.elements.title.value = "";
+  });
+  by("health-form").onsubmit = guard((e) => {
+    e.preventDefault();
+    const f = e.target;
+    appendRecord("health", {
+      date: fval(f, "date"),
+      kind: fval(f, "kind"),
+      minutes: number(f, "minutes"),
+      sleep: number(f, "sleep"),
+      fatigue: number(f, "fatigue"),
+      note: fval(f, "note").trim(),
+    });
+    f.elements.note.value = "";
+  });
+  for (const id of ["money-form", "health-form"])
+    by(id).elements.date.value = todayDate();
+  for (const id of [
+    "time-chart-kind",
+    "money-chart-kind",
+    "decision-chart-kind",
+    "health-chart-kind",
+  ])
+    by(id).onchange = guard(renderHub);
+  for (const b of doc.querySelectorAll("[data-hub-jump]"))
+    b.onclick = () =>
+      by(b.dataset.hubJump).scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
+
+  function chart(container, rows, kind, unit = "") {
+    container.replaceChildren();
+    const data = rows.filter((r) => Number.isFinite(r.value));
+    if (!data.length || data.every((r) => r.value === 0)) {
+      container.append(make("p", "此範圍尚無可分析的數據。"));
+      return;
+    }
+    const max = Math.max(1, ...data.map((r) => Math.abs(r.value))),
+      table = make("table", undefined, "hub-table"),
+      head = make("tr");
+    head.append(make("th", "項目"), make("th", "數值" + unit));
+    table.append(head);
+    const fmt = (v) =>
+      unit === "元" ? money(v) : `${Math.round(v * 10) / 10}${unit}`;
+    for (const row of data) {
+      const tr = make("tr");
+      tr.append(make("td", row.label), make("td", fmt(row.value)));
+      table.append(tr);
+    }
+    if (kind === "table") {
+      container.append(table);
+      return;
+    }
+    if (kind === "bars" || kind === "heat") {
+      const group = make(
+        "div",
+        undefined,
+        kind === "heat" ? "hub-heat" : "hub-bars",
+      );
+      for (const row of data) {
+        const item = make("div", undefined, "hub-chart-row");
+        item.append(make("span", row.label), make("strong", fmt(row.value)));
+        const track = make("div", undefined, "hub-track"),
+          fill = make("span");
+        fill.style.width = (Math.abs(row.value) / max) * 100 + "%";
+        fill.style.background = row.value < 0 ? "#ae4c51" : "#347a68";
+        track.append(fill);
+        item.append(track);
+        if (kind === "heat")
+          item.style.background = `rgba(52,122,104,${0.06 + (0.2 * Math.abs(row.value)) / max})`;
+        group.append(item);
+      }
+      container.append(group);
+    } else if (kind === "donut") {
+      const positive = data.filter((r) => r.value > 0),
+        total = positive.reduce((n, r) => n + r.value, 0);
+      if (total === 0) {
+        container.append(make("p", "沒有可呈現比例的正數資料。"));
+      } else {
+        let at = 0;
+        const colors = ["#347a68", "#668cb2", "#bc9154", "#9881a8", "#b86975"];
+        const ring = make("div", undefined, "hub-donut");
+        ring.style.background =
+          "conic-gradient(" +
+          positive
+            .map((r, i) => {
+              const end = at + (r.value / total) * 360,
+                s = `${colors[i % colors.length]} ${at}deg ${end}deg`;
+              at = end;
+              return s;
+            })
+            .join(",") +
+          ")";
+        ring.setAttribute("role", "img");
+        ring.setAttribute(
+          "aria-label",
+          positive.map((r) => `${r.label} ${fmt(r.value)}`).join("，"),
+        );
+        container.append(ring);
+      }
+    } else if (kind === "line") {
+      const svg = doc.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 600 180");
+      svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", "依明細順序的數值趨勢");
+      const low = Math.min(0, ...data.map((r) => r.value)),
+        high = Math.max(1, ...data.map((r) => r.value)),
+        span = high - low;
+      const axis = doc.createElementNS(svg.namespaceURI, "line");
+      axis.setAttribute("x1", "20");
+      axis.setAttribute("x2", "580");
+      axis.setAttribute("y1", String(160 - ((0 - low) / span) * 140));
+      axis.setAttribute("y2", axis.getAttribute("y1"));
+      axis.setAttribute("stroke", "#a6b9ae");
+      svg.append(axis);
+      const path = doc.createElementNS(svg.namespaceURI, "polyline");
+      path.setAttribute(
+        "points",
+        data
+          .map(
+            (r, i) =>
+              `${20 + (i / Math.max(1, data.length - 1)) * 560},${160 - ((r.value - low) / span) * 140}`,
+          )
+          .join(" "),
+      );
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", "#347a68");
+      path.setAttribute("stroke-width", "3");
+      svg.append(path);
+      container.append(svg);
+    }
+    const details = make("details");
+    details.append(make("summary", "查看數字明細"), table);
+    container.append(details);
+  }
+  function metric(container, label, value) {
+    const e = make("article", undefined, "metric");
+    e.append(make("span", label), make("strong", value));
+    container.append(e);
+  }
+  const kindLabels = {
+    walk: "散步",
+    run: "跑步",
+    strength: "肌力",
+    stretch: "伸展",
+    rest: "恢復",
+  };
+  function renderHub() {
+    const h = hub(),
+      dates = getDates(),
+      dateSet = new Set(dates),
+      asOf = todayDate(),
+      p = getPlan(),
+      financial = hubFinance(h, asOf, dates),
+      decisions = hubDecisionRows(h, getState().tasks);
+    by("hub-summary").textContent =
+      `目前餘額 ${money(financial.balance)} · 選定範圍可排 ${(p.capacity / 60).toFixed(1)} 小時 · 進行中 ${decisions.filter((r) => r.pool === "doing").length}/${h.wipLimit} 件`;
+    moneyHydration = hydrate(
+      by("money-settings"),
+      {
+        opening: h.opening / 100,
+        reserve: h.reserve / 100,
+        budget: (h.budgets?.[dates[0] + "/" + dates.at(-1)] || 0) / 100,
+      },
+      moneyHydration,
+    );
+    resourceHydration = hydrate(
+      by("resource-form"),
+      { resources: h.resources, wipLimit: h.wipLimit },
+      resourceHydration,
+    );
+    by("money-metrics").replaceChildren();
+    for (const [label, value] of [
+      ["截至今天實際餘額", financial.balance],
+      ["扣除儲備及本期承諾費用", financial.available],
+      ["本期實際支出", financial.expense],
+      ["本期預算剩餘", financial.budgetRemaining],
+    ])
+      metric(by("money-metrics"), label, money(value));
+    const low = financial.forecast.find((r) => r.value < h.reserve);
+    by("money-warning").textContent = [
+      financial.overdue.length
+        ? `${financial.overdue.length}筆預定收支已過期，請核對是否支付或取消。`
+        : "",
+      low ? `${low.date}預測餘額低於儲備金。` : "",
+      "預定收入仍有不確定性；儲備金與承諾費用應分開設定。",
+    ].join(" ");
+    const mk = by("money-chart-kind").value;
+    chart(
+      by("money-chart"),
+      mk === "donut" || mk === "bars"
+        ? financial.categories
+        : financial.forecast.map((r) => ({ label: r.date, value: r.value })),
+      mk,
+      "元",
+    );
+    by("money-list").replaceChildren();
+    for (const row of h.transactions
+      .filter(
+        (r) =>
+          dateSet.has(r.date) || (r.status === "planned" && r.date <= asOf),
+      )
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 100)) {
+      const item = make("div", undefined, "hub-record");
+      item.append(
+        make(
+          "span",
+          `${row.date} · ${row.status === "planned" ? "預定" : "實際"} · ${row.category} ${row.type === "income" ? "+" : "−"}${money(row.cents)} ${row.note}${row.eventId && row.status === "planned" && !getState().events.some((e) => e.id === row.eventId) ? " · 原行程已刪除，請核對費用" : ""}`,
+        ),
+      );
+      if (row.status === "planned")
+        item.append(
+          button("今天已收／付", () =>
+            updateHub((x) => {
+              const r = x.transactions.find((t) => t.id === row.id);
+              r.status = "actual";
+              r.date = todayDate();
+              return x;
+            }),
+          ),
+        );
+      item.append(
+        button(row.status === "planned" ? "取消" : "刪除", () => {
+          if (confirm("移除此收支紀錄？"))
+            updateHub((x) => ({
+              ...x,
+              transactions: x.transactions.filter((t) => t.id !== row.id),
+            }));
+        }),
+      );
+      by("money-list").append(item);
+    }
+    by("decision-list").replaceChildren();
+    for (const [pool, title] of [
+      ["must", "一定要做"],
+      ["want", "想做"],
+      ["doing", "正在做"],
+      ["done", "已完成"],
+    ]) {
+      const col = make("div", undefined, "hub-pool");
+      col.append(make("h3", title));
+      for (const row of decisions.filter((r) => r.pool === pool)) {
+        const item = make("div", undefined, "hub-record");
+        item.append(
+          make(
+            "span",
+            `${row.title} · ${row.hours}h · ${money(row.cents)} · ${row.deadline || "期限待確認"}`,
+          ),
+        );
+        for (const [target, label] of pool === "done"
+          ? [["want", "重新開啟"]]
+          : pool === "doing"
+            ? [
+                ["want", "暫停"],
+                ["done", "確認完成"],
+              ]
+            : [["doing", "開始推進"]])
+          item.append(
+            button(label, () => {
+              const next = structuredClone(getState());
+              next.hub = structuredClone(hub());
+              const d = next.hub.decisions.find((r) => r.id === row.id),
+                t = next.tasks.find((t) => t.id === row.taskId);
+              if (!t) throw Error("关联任務已刪除，請移除此決策後重新新增");
+              if (next.timer?.task === t.id && target === "done")
+                throw Error("請先結束這件工作的計時");
+              for (const x of next.hub.decisions)
+                if (next.tasks.find((t) => t.id === x.taskId)?.done)
+                  x.pool = "done";
+              d.pool = target;
+              t.active = target === "doing";
+              t.done = target === "done";
+              if (target === "doing" && t.remaining === 0)
+                throw Error("請先在任務區修正剩餘估時");
+              persist(next);
+            }),
+          );
+        item.append(
+          button("移除決策", () => {
+            if (confirm("移除此決策？已建立的任務仍保留在任務區。"))
+              updateHub((x) => ({
+                ...x,
+                decisions: x.decisions.filter((r) => r.id !== row.id),
+              }));
+          }),
+        );
+        col.append(item);
+      }
+      by("decision-list").append(col);
+    }
+    const doing = decisions.filter((r) => r.pool === "doing"),
+      required = doing.reduce(
+        (n, r) =>
+          n +
+          (getState().tasks.find((t) => t.id === r.taskId)?.remaining || 0) /
+            60,
+        0,
+      ),
+      cost = doing.reduce((n, r) => n + r.cents, 0);
+    by("resource-summary").textContent =
+      `進行中剩餘估時 ${required.toFixed(1)}h / 本期容量 ${(p.capacity / 60).toFixed(1)}h；預估成本 ${money(cost)}。${required * 60 > p.capacity ? "時間不足，先縮小或暫停工作。" : ""}${cost > Math.max(0, financial.available) ? "預估成本超過自由可用金額。" : ""} 評分只是你設定的優先順序，並非客觀結論。`;
+    const dk = by("decision-chart-kind").value;
+    chart(
+      by("decision-chart"),
+      dk === "donut"
+        ? ["must", "want", "doing", "done"].map((pool, i) => ({
+            label: ["必做", "想做", "進行中", "完成"][i],
+            value: decisions.filter((r) => r.pool === pool).length,
+          }))
+        : decisions
+            .filter((r) => r.pool !== "done")
+            .sort((a, b) => b.score - a.score)
+            .map((r) => ({
+              label: r.title,
+              value: dk === "heat" ? r.hours : r.score,
+            })),
+      dk,
+      dk === "heat" ? "h" : "",
+    );
+    const health = h.health.filter((r) => dateSet.has(r.date)),
+      hk = by("health-chart-kind").value;
+    const daily = new Map();
+    for (const row of health)
+      daily.set(
+        row.date,
+        (daily.get(row.date) || 0) + (row.kind === "rest" ? 0 : row.minutes),
+      );
+    const hs =
+      hk === "donut"
+        ? Object.entries(kindLabels).map(([key, label]) => ({
+            label,
+            value: health
+              .filter((r) => r.kind === key && key !== "rest")
+              .reduce((n, r) => n + r.minutes, 0),
+          }))
+        : hk === "line"
+          ? [
+              ...new Map(
+                health.filter((r) => r.sleep > 0).map((r) => [r.date, r]),
+              ).values(),
+            ]
+              .sort((a, b) => a.date.localeCompare(b.date))
+              .map((r) => ({ label: r.date, value: r.sleep }))
+          : [...daily]
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([label, value]) => ({ label, value }));
+    chart(by("health-chart"), hs, hk, hk === "line" ? "h" : "分鐘");
+    const tired = health.some((r) => r.date === asOf && r.fatigue >= 4);
+    by("health-summary").textContent =
+      `本期記錄 ${health.length} 筆；活動 ${[...daily.values()].reduce((n, v) => n + v, 0)} 分鐘。${tired ? "今天有較疲勞的紀錄，可以縮小工作與運動安排。" : ""} 未記錄代表未知；沒有精力加分或健康診斷。`;
+    by("health-list").replaceChildren();
+    for (const row of health
+      .slice()
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 50)) {
+      const item = make("div", undefined, "hub-record");
+      item.append(
+        make(
+          "span",
+          `${row.date} · ${kindLabels[row.kind]} ${row.minutes}分鐘 · 睡眠${row.sleep}h · 疲勞${row.fatigue}/5 · ${row.note}`,
+        ),
+        button("刪除", () => {
+          if (confirm("刪除此活動紀錄？"))
+            updateHub((x) => ({
+              ...x,
+              health: x.health.filter((r) => r.id !== row.id),
+            }));
+        }),
+      );
+      by("health-list").append(item);
+    }
+    const classifications = new Map(),
+      classNames = {
+        study: "學習",
+        work: "報告／工作",
+        exercise: "運動",
+        personal: "生活",
+      };
+    for (const d of p.days)
+      for (const b of d.blocks) {
+        const category =
+          getState().tasks.find((t) => t.id === b.id)?.category || "study";
+        classifications.set(
+          category,
+          (classifications.get(category) || 0) + (b.end - b.start) / 60,
+        );
+      }
+    const tk = by("time-chart-kind").value;
+    const logs = getState().logs.filter((r) => dateSet.has(r.date)),
+      timeRows =
+        tk === "donut"
+          ? [...classifications].map(([category, value]) => ({
+              label: classNames[category] || category,
+              value,
+            }))
+          : tk === "line"
+            ? dates.map((date) => ({
+                label: date,
+                value:
+                  logs
+                    .filter((r) => r.date === date)
+                    .reduce((n, r) => n + r.minutes, 0) / 60,
+              }))
+            : p.days.map((d) => ({ label: d.date, value: d.used / 60 }));
+    chart(by("time-chart"), timeRows, tk, "h");
+  }
+  renderHub();
+  return { render: renderHub };
+}
+
+return {mountLifestyle};
+})();
+__modules[2]=(()=>{
+const {validateHub}=__modules[0];
+function validPlannerDate(value) {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !isNaN(Date.parse(value)) &&
+    new Date(value + "T12:00:00Z").toISOString().slice(0, 10) === value
+  );
+}
+function validate(s) {
+  const record = (x) => !!x && typeof x === "object" && !Array.isArray(x),
+    num = (n, a, b) => Number.isFinite(n) && n >= a && n <= b,
+    int = (n, a, b) => Number.isInteger(n) && num(n, a, b),
+    id = (x) =>
+      typeof x === "string" &&
+      x.trim() === x &&
+      x.length > 0 &&
+      x.length <= 120,
+    text = (x, max) => typeof x === "string" && !!x.trim() && x.length <= max,
+    time = (t) => typeof t === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(t),
+    date = validPlannerDate;
+  if (
+    !record(s) ||
+    s.version !== 1 ||
+    !Array.isArray(s.tasks) ||
+    s.tasks.length > 1000 ||
+    !Array.isArray(s.events) ||
+    s.events.length > 1000 ||
+    !Array.isArray(s.days) ||
+    s.days.length !== 7
+  )
+    throw Error("備份格式不正確");
+  if (s.revision !== undefined && !int(s.revision, 0, Number.MAX_SAFE_INTEGER))
+    throw Error("修訂號不正確");
+  if (
+    !record(s.settings) ||
+    !int(s.settings.focus, 5, 180) ||
+    !int(s.settings.rest, 1, 60) ||
+    !int(s.settings.minBlock, 5, 180) ||
+    !num(s.settings.buffer, 0, 80) ||
+    !int(s.settings.limit, 1, 10) ||
+    s.settings.minBlock > s.settings.focus
+  )
+    throw Error("專注、休息與最小區段需為有效整數分鐘");
+  const checkDay = (d) => {
+    if (!record(d) || !num(d.hours, 0, 24)) throw Error("工時上限不正確");
+    if (d.windows !== undefined) {
+      if (
+        !Array.isArray(d.windows) ||
+        d.windows.length > 12 ||
+        d.windows.some(
+          (w) =>
+            !record(w) || !time(w.start) || !time(w.end) || w.end <= w.start,
+        )
+      )
+        throw Error("可用時段不正確");
+    } else if (!time(d.start) || !time(d.end) || d.end <= d.start)
+      throw Error("可用時段不正確");
+  };
+  s.days.forEach(checkDay);
+  if (s.overrides !== undefined) {
+    if (!record(s.overrides) || Object.keys(s.overrides).length > 400)
+      throw Error("單日設定不正確");
+    for (const [d, x] of Object.entries(s.overrides)) {
+      if (!date(d)) throw Error("單日日期不正確");
+      checkDay(x);
+    }
+  }
+  const goalIds = new Set();
+  if (s.goals !== undefined) {
+    if (!Array.isArray(s.goals) || s.goals.length > 200)
+      throw Error("目標資料不正確");
+    for (const g of s.goals) {
+      if (
+        !record(g) ||
+        !id(g.id) ||
+        goalIds.has(g.id) ||
+        !text(g.title, 200) ||
+        !["month", "quarter"].includes(g.period) ||
+        !date(g.date)
+      )
+        throw Error("目標名稱、ID或日期不正確");
+      goalIds.add(g.id);
+    }
+  }
+  const ids = new Set();
+  for (const t of s.tasks) {
+    if (
+      !record(t) ||
+      !id(t.id) ||
+      ids.has(t.id) ||
+      !text(t.title, 200) ||
+      !num(t.remaining, 0, 100000) ||
+      !int(t.priority, 1, 3) ||
+      (t.category !== undefined &&
+        !["study", "work", "exercise", "personal"].includes(t.category)) ||
+      (t.deadline !== undefined && t.deadline !== "" && !date(t.deadline)) ||
+      typeof t.active !== "boolean" ||
+      typeof t.done !== "boolean" ||
+      (t.outcome !== undefined &&
+        (typeof t.outcome !== "string" || t.outcome.length > 300)) ||
+      (t.depends !== undefined && typeof t.depends !== "string") ||
+      (t.goal !== undefined &&
+        (typeof t.goal !== "string" || (t.goal !== "" && !goalIds.has(t.goal))))
+    )
+      throw Error("任務名稱、ID、期限、優先級或關聯不正確");
+    ids.add(t.id);
+  }
+  for (const t of s.tasks)
+    if (t.depends && (!ids.has(t.depends) || t.depends === t.id))
+      throw Error("前置任務不正確");
+  const index = new Map(s.tasks.map((t) => [t.id, t])),
+    colors = new Map();
+  for (const task of s.tasks) {
+    if (colors.get(task.id) === 2) continue;
+    const path = [];
+    let current = task;
+    while (current && colors.get(current.id) !== 2) {
+      if (colors.get(current.id) === 1) throw Error("任務存在循環依賴");
+      colors.set(current.id, 1);
+      path.push(current.id);
+      current = current.depends ? index.get(current.depends) : null;
+    }
+    for (const x of path) colors.set(x, 2);
+  }
+  const eventIds = new Set();
+  for (const e of s.events) {
+    if (
+      !record(e) ||
+      !id(e.id) ||
+      eventIds.has(e.id) ||
+      !text(e.title, 120) ||
+      (e.category !== undefined &&
+        !["course", "study", "rest", "deadline", "personal"].includes(e.category)) ||
+      (e.status !== undefined &&
+        !["draft", "confirmed", "done", "cancelled"].includes(e.status)) ||
+      (e.notes !== undefined &&
+        (typeof e.notes !== "string" || e.notes.length > 2000)) ||
+      !time(e.start) ||
+      !time(e.end) ||
+      e.end <= e.start
+    )
+      throw Error("行程名稱、ID或時間不正確");
+    eventIds.add(e.id);
+    const series = e.weekday !== undefined;
+    if (series) {
+      if (
+        e.date !== undefined ||
+        !int(e.weekday, 0, 6) ||
+        !date(e.from) ||
+        !date(e.until) ||
+        e.until < e.from
+      )
+        throw Error("重複行程規則不正確");
+    } else if (!date(e.date)) throw Error("行程日期不正確");
+    const inSeries = (d) =>
+      series &&
+      date(d) &&
+      d >= e.from &&
+      d <= e.until &&
+      new Date(d + "T12:00:00Z").getUTCDay() === e.weekday;
+    if (
+      e.excludedDates !== undefined &&
+      (!Array.isArray(e.excludedDates) ||
+        e.excludedDates.length > 400 ||
+        e.excludedDates.some((d) => !inSeries(d)))
+    )
+      throw Error("排除日期必須屬於重複行程");
+    if (e.overrides !== undefined) {
+      if (!record(e.overrides) || Object.keys(e.overrides).length > 400)
+        throw Error("行程覆寫格式不正確");
+      for (const [d, o] of Object.entries(e.overrides)) {
+        if (
+          !inSeries(d) ||
+          !record(o) ||
+          Object.keys(o).some(
+            (k) =>
+              ![
+                "title",
+                "start",
+                "end",
+                "category",
+                "notes",
+                "status",
+              ].includes(k),
+          ) ||
+          (o.title !== undefined && !text(o.title, 120)) ||
+          (o.category !== undefined &&
+            !["course", "study", "rest", "deadline", "personal"].includes(o.category)) ||
+          (o.status !== undefined &&
+            !["draft", "confirmed", "done", "cancelled"].includes(o.status)) ||
+          (o.notes !== undefined &&
+            (typeof o.notes !== "string" || o.notes.length > 2000)) ||
+          !time(o.start ?? e.start) ||
+          !time(o.end ?? e.end) ||
+          (o.end ?? e.end) <= (o.start ?? e.start)
+        )
+          throw Error("覆寫日期或時間不正確");
+      }
+    }
+  }
+  if (
+    s.logs !== undefined &&
+    (!Array.isArray(s.logs) ||
+      s.logs.length > 10000 ||
+      s.logs.some(
+        (x) =>
+          !record(x) ||
+          !id(x.task) ||
+          !date(x.date) ||
+          !num(x.minutes, 0, 1440),
+      ))
+  )
+    throw Error("計時紀錄不正確");
+  if (s.timer !== undefined && s.timer !== null) {
+    const t = s.timer;
+    if (
+      !record(t) ||
+      !["focus", "rest"].includes(t.mode) ||
+      !num(t.until, 0, 8640000000000000) ||
+      (t.mode === "focus" &&
+        (!ids.has(t.task) ||
+          index.get(t.task).done ||
+          !num(t.started, 0, 8640000000000000) ||
+          t.until < t.started ||
+          t.until - t.started > 180 * 60000))
+    )
+      throw Error("計時狀態不正確");
+  }
+  if (s.confirmed !== undefined) {
+    const c = s.confirmed;
+    if (
+      !record(c) ||
+      typeof c.at !== "string" ||
+      (c.revision !== undefined &&
+        !int(c.revision, 0, Number.MAX_SAFE_INTEGER)) ||
+      !Array.isArray(c.blocks) ||
+      c.blocks.length > 10000 ||
+      c.blocks.some(
+        (b) =>
+          !record(b) ||
+          !text(b.title, 200) ||
+          !date(b.date) ||
+          !int(b.start, 0, 1439) ||
+          !int(b.end, 1, 1439) ||
+          b.end <= b.start,
+      )
+    )
+      throw Error("排程快照不正確");
+  }
+  if (s.hub !== undefined) validateHub(s.hub);
+  return s;
+}
+
+return {validPlannerDate,validate};
+})();
+__modules[3]=(()=>{
+const {validPlannerDate}=__modules[2];
+function minutes(t) {
+  if (typeof t !== "string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(t))
+    throw Error("時間需為00:00～23:59");
+  return Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+}
+function clock(n) {
+  if (!Number.isInteger(n) || n < 0 || n >= 1440)
+    throw Error("時刻需為有效整數分鐘");
+  return `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
+}
+function range(anchor, period) {
+  if (
+    !validPlannerDate(anchor) ||
+    !["day", "week", "month", "quarter", "year"].includes(period)
+  )
+    throw Error("規劃日期或週期不正確");
+  const d = new Date(anchor + "T12:00:00Z");
+  if (period === "day") return [anchor];
+  if (period === "week")
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+  else d.setUTCDate(1);
+  if (period === "quarter") d.setUTCMonth(Math.floor(d.getUTCMonth() / 3) * 3);
+  if (period === "year") d.setUTCMonth(0);
+  const end = new Date(d);
+  if (period === "week") end.setUTCDate(end.getUTCDate() + 7);
+  else
+    end.setUTCMonth(
+      end.getUTCMonth() +
+        (period === "year" ? 12 : period === "quarter" ? 3 : 1),
+    );
+  const out = [];
+  for (; d < end; d.setUTCDate(d.getUTCDate() + 1))
+    out.push(d.toISOString().slice(0, 10));
+  return out;
+}
+function shiftPeriod(anchor, period, amount) {
+  if (
+    !validPlannerDate(anchor) ||
+    !["day", "week", "month", "quarter", "year"].includes(period) ||
+    !Number.isInteger(amount)
+  )
+    throw Error("日期移動參數不正確");
+  const date = new Date(anchor + "T12:00:00Z");
+  const day = date.getUTCDate();
+  if (period === "day") date.setUTCDate(day + amount);
+  else if (period === "week") date.setUTCDate(day + amount * 7);
+  else {
+    const months = period === "month" ? 1 : period === "quarter" ? 3 : 12;
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() + amount * months);
+    const last = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+    ).getUTCDate();
+    date.setUTCDate(Math.min(day, last));
+  }
+  return date.toISOString().slice(0, 10);
+}
+function subtract(start, end, blocks) {
+  if (
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    start < 0 ||
+    end > 1440 ||
+    end < start
+  )
+    throw Error("可用區間不正確");
+  mergeIntervals(blocks);
+  let free = start === end ? [] : [[start, end]];
+  for (const [a, b] of blocks)
+    free = free.flatMap(([s, e]) =>
+      b <= s || a >= e
+        ? [[s, e]]
+        : [
+            [s, Math.min(a, e)],
+            [Math.max(b, s), e],
+          ].filter(([x, y]) => y > x),
+    );
+  return free;
+}
+function mergeIntervals(intervals) {
+  if (
+    !Array.isArray(intervals) ||
+    intervals.some(
+      (x) =>
+        !Array.isArray(x) ||
+        x.length !== 2 ||
+        !x.every(Number.isFinite) ||
+        x[0] < 0 ||
+        x[1] > 1440 ||
+        x[1] < x[0],
+    )
+  )
+    throw Error("區間格式或順序不正確");
+  const sorted = intervals.map((x) => [...x]).sort((a, b) => a[0] - b[0]),
+    out = [];
+  for (const x of sorted) {
+    const last = out.at(-1);
+    if (last && x[0] <= last[1]) last[1] = Math.max(last[1], x[1]);
+    else out.push(x);
+  }
+  return out;
+}
+function parseWindows(text) {
+  if (typeof text !== "string") throw Error("請輸入文字時段");
+  if (!text.trim()) return [];
+  if (text.split(/[,，\n]/).length > 12) throw Error("每天最多12個時段");
+  return text.split(/[,，\n]/).map((part) => {
+    const match = part
+      .trim()
+      .match(/^([0-2]\d:[0-5]\d)\s*[-–]\s*([0-2]\d:[0-5]\d)$/);
+    if (
+      !match ||
+      minutes(match[1]) >= 1440 ||
+      minutes(match[2]) >= 1440 ||
+      match[2] <= match[1]
+    )
+      throw Error("時段格式：08:00-10:00,18:30-22:15；跨午夜請拆分");
+    return { start: match[1], end: match[2] };
+  });
+}
+
+return {minutes,clock,range,shiftPeriod,subtract,mergeIntervals,parseWindows};
+})();
+__modules[4]=(()=>{
+function pert(o, m, p) {
+  if (![o, m, p].every(Number.isFinite) || o < 0 || o > m || m > p)
+    throw Error("估時需符合：0 ≤ 樂觀 ≤ 最可能 ≤ 悲觀");
+  return (o + 4 * m + p) / 6;
+}
+
+return {pert};
+})();
+__modules[5]=(()=>{
+// Shared data contract. No DOM or storage dependencies.
+const EVENT_TEXT_FIELDS = Object.freeze({
+  subject: 80,
+  teacher: 80,
+  room: 120,
+  outcome: 300,
+  method: 1000,
+});
+const OVERRIDE_FIELDS = Object.freeze([
+  "title",
+  "start",
+  "end",
+  "category",
+  "notes",
+  "status",
+  ...Object.keys(EVENT_TEXT_FIELDS),
+  "commitment",
+  "actualMinutes",
+]);
+const DEFAULT_SLOTS = Object.freeze(
+  [
+    ["晨間", "00:00", "08:30"],
+    ["上午", "08:30", "12:00"],
+    ["午間", "12:00", "13:30"],
+    ["下午", "13:30", "17:30"],
+    ["傍晚", "17:30", "18:30"],
+    ["夜間", "18:30", "22:15"],
+    ["睡前", "22:15", "24:00"],
+  ].map(([label, start, end]) => Object.freeze({ label, start, end })),
+);
+const record = (x) => !!x && typeof x === "object" && !Array.isArray(x);
+const calendarDate = (x) =>
+  typeof x === "string" &&
+  /^\d{4}-\d{2}-\d{2}$/.test(x) &&
+  Number.isFinite(Date.parse(x + "T12:00:00Z")) &&
+  new Date(x + "T12:00:00Z").toISOString().slice(0, 10) === x;
+const calendarTime = (x) =>
+  typeof x === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(x);
+function minutes(value) {
+  if (value === "24:00") return 1440;
+  if (!calendarTime(value)) throw Error("時間格式不正確。");
+  return Number(value.slice(0, 2)) * 60 + Number(value.slice(3));
+}
+function eventDetails(item, { series = false } = {}) {
+  const result = {};
+  for (const [key, max] of Object.entries(EVENT_TEXT_FIELDS))
+    if (item[key] !== undefined) {
+      if (typeof item[key] !== "string" || item[key].length > max)
+        throw Error("行程詳細欄位不正確：" + key);
+      result[key] = item[key].trim();
+    }
+  if (item.commitment !== undefined) {
+    if (!["fixed", "flexible"].includes(item.commitment))
+      throw Error("行程固定／彈性標記不正確。");
+    result.commitment = item.commitment;
+  }
+  if (item.actualMinutes !== undefined) {
+    if (
+      !Number.isInteger(item.actualMinutes) ||
+      item.actualMinutes < 0 ||
+      item.actualMinutes > 1440 ||
+      (series && item.actualMinutes !== 0)
+    )
+      throw Error("實際時間須為0–1440分鐘，週期事件請逐日記錄。");
+    result.actualMinutes = item.actualMinutes;
+  }
+  return result;
+}
+function defaultCalendarPlan() {
+  return {
+    version: 1,
+    weekly: {},
+    subjects: {},
+    slots: DEFAULT_SLOTS.map((x) => ({ ...x })),
+    dailyMajorLimit: 4,
+    defaultTargetHours: 20,
+    defaultCapacityHours: 32.5,
+  };
+}
+function validateCalendarPlan(input) {
+  if (!record(input) || input.version !== 1)
+    throw Error("日曆規劃版本不支援。");
+  if (
+    !Number.isInteger(input.dailyMajorLimit) ||
+    input.dailyMajorLimit < 1 ||
+    input.dailyMajorLimit > 4
+  )
+    throw Error("每日主要事項上限為1–4。");
+  for (const key of ["defaultTargetHours", "defaultCapacityHours"])
+    if (!Number.isFinite(input[key]) || input[key] < 0 || input[key] > 168)
+      throw Error("週時數須在0–168小時。");
+  if (
+    !Array.isArray(input.slots) ||
+    input.slots.length < 1 ||
+    input.slots.length > 12
+  )
+    throw Error("時段須有1–12段。");
+  let end = 0;
+  const labels = new Set();
+  for (const slot of input.slots) {
+    if (
+      !record(slot) ||
+      typeof slot.label !== "string" ||
+      !slot.label.trim() ||
+      slot.label.length > 20 ||
+      labels.has(slot.label) ||
+      !calendarTime(slot.start) ||
+      (!calendarTime(slot.end) && slot.end !== "24:00") ||
+      minutes(slot.start) !== end ||
+      minutes(slot.end) <= end
+    )
+      throw Error("時段須由00:00起連續排列，名稱不可重複。");
+    labels.add(slot.label);
+    end = minutes(slot.end);
+  }
+  if (end !== 1440) throw Error("時段須完整涵蓋一天，最後結束為24:00。");
+  if (!record(input.weekly) || Object.keys(input.weekly).length > 260)
+    throw Error("週計畫最多260週。");
+  const weekly = Object.create(null);
+  for (const [day, week] of Object.entries(input.weekly)) {
+    if (
+      !calendarDate(day) ||
+      new Date(day + "T12:00:00Z").getUTCDay() !== 1 ||
+      !record(week)
+    )
+      throw Error("週計畫需使用週一日期。");
+    for (const key of ["targetHours", "capacityHours"])
+      if (!Number.isFinite(week[key]) || week[key] < 0 || week[key] > 168)
+        throw Error("週目標與容量須為0–168小時。");
+    if (
+      !["normal", "exam", "report", "holiday"].includes(week.mode) ||
+      typeof week.title !== "string" ||
+      week.title.length > 120 ||
+      !Array.isArray(week.focus) ||
+      week.focus.length > 3 ||
+      week.focus.some((x) => typeof x !== "string" || x.length > 200) ||
+      typeof (week.review ?? "") !== "string" ||
+      (week.review ?? "").length > 2000
+    )
+      throw Error("週重點或回顧格式不正確。");
+    if (
+      week.dailyTargets !== undefined &&
+      (!Array.isArray(week.dailyTargets) ||
+        week.dailyTargets.length !== 7 ||
+        week.dailyTargets.some(
+          (n) => n !== null && (!Number.isFinite(n) || n < 0 || n > 24),
+        ))
+    )
+      throw Error("每日目標須為七天的0–24小時，未分配請留空。");
+    weekly[day] = {
+      title: week.title.trim(),
+      focus: week.focus.map((x) => x.trim()).filter(Boolean),
+      mode: week.mode,
+      targetHours: week.targetHours,
+      capacityHours: week.capacityHours,
+      review: week.review ?? "",
+      ...(week.dailyTargets === undefined
+        ? {}
+        : { dailyTargets: [...week.dailyTargets] }),
+    };
+  }
+  if (!record(input.subjects) || Object.keys(input.subjects).length > 30)
+    throw Error("科目讀法最多30科。");
+  const subjects = Object.create(null);
+  for (const [subject, method] of Object.entries(input.subjects)) {
+    if (
+      !subject.trim() ||
+      subject.length > 80 ||
+      typeof method !== "string" ||
+      method.length > 2000
+    )
+      throw Error("科目讀法格式不正確。");
+    subjects[subject] = method;
+  }
+  return {
+    ...input,
+    weekly,
+    subjects,
+    slots: input.slots.map((x) => ({ ...x })),
+  };
+}
+
+return {EVENT_TEXT_FIELDS,OVERRIDE_FIELDS,DEFAULT_SLOTS,calendarDate,calendarTime,minutes,eventDetails,defaultCalendarPlan,validateCalendarPlan};
+})();
+__modules[6]=(()=>{
+const {eventDetails,OVERRIDE_FIELDS}=__modules[5];
+const isRecord = value => !!value && typeof value === 'object' && !Array.isArray(value);
+const isDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+const isTime = value => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+function weekDates(date){if(!isDate(date))throw Error('日期格式不正確。');const d=new Date(date+'T12:00:00Z');const offset=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-offset);return Array.from({length:7},(_,i)=>{const day=new Date(d);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);});}
+function eventsOn(events,date){if(!Array.isArray(events)||!isDate(date))throw Error('行程或日期格式不正確。');const weekday=new Date(date+'T12:00:00Z').getUTCDay();return events.flatMap(event=>{if(!isRecord(event))throw Error('行程格式不正確。');if(event.date===date)return [event];if(event.weekday!==weekday||date<event.from||date>event.until||(event.excludedDates??[]).includes(date))return [];const override=event.overrides?.[date]??{};return [{...event,...override,id:`${event.id}@${date}`,_seriesId:event.id,_occurrenceDate:date}];}).sort((a,b)=>(a.start??'').localeCompare(b.start??''));}
+function workloadByDay(events,dates){if(!Array.isArray(dates)||dates.some(d=>!isDate(d)))throw Error('統計日期不正確。');const categories=['course','study','rest','deadline','personal'];return dates.map(date=>{const minutes=Object.fromEntries(categories.map(category=>[category,0]));for(const event of eventsOn(events,date)){if(event.status==='cancelled'||(!event.start&&!event.end))continue;if(!isTime(event.start)||!isTime(event.end)||event.end<=event.start)throw Error('行程時間不完整，無法計算時數。');const toMinutes=value=>Number(value.slice(0,2))*60+Number(value.slice(3));const duration=toMinutes(event.end)-toMinutes(event.start);const category=categories.includes(event.category)?event.category:'personal';minutes[category]+=duration;}return {date,minutes,total:Object.values(minutes).reduce((sum,value)=>sum+value,0)};});}
+function excludeOccurrence(events,seriesId,date){if(!Array.isArray(events)||!isDate(date))throw Error('例外日期不正確。');const series=events.find(e=>e.id===seriesId&&e.weekday!==undefined);if(!series||date<series.from||date>series.until||new Date(date+'T12:00:00Z').getUTCDay()!==series.weekday)throw Error('例外日期不屬於此週期行程。');return events.map(event=>event.id===seriesId?{...event,excludedDates:[...new Set([...(event.excludedDates??[]),date])].sort()}:event);}
+function detachOccurrence(events,seriesId,date,changes){const series=events.find(event=>event.id===seriesId&&event.weekday!==undefined);if(!series||date<series.from||date>series.until||new Date(date+'T12:00:00Z').getUTCDay()!==series.weekday)throw new Error('找不到此週期行程日期。');if(!isRecord(changes))throw new Error('單次行程內容不正確。');const updated=excludeOccurrence(events,seriesId,date);return [...updated,{...series,...changes,id:crypto.randomUUID(),date:changes.date??date,weekday:undefined,from:undefined,until:undefined,excludedDates:undefined,overrides:undefined}];}
+function conflicts(events){if(!Array.isArray(events)||events.some(e=>!isRecord(e)))throw Error('行程必須為有效清單。');const timed=events.filter(e=>e.status!=='cancelled'&&e.start&&e.end),result=[];for(let i=0;i<timed.length;i++)for(let j=i+1;j<timed.length;j++)if(timed[i].start<timed[j].end&&timed[j].start<timed[i].end)result.push([timed[i].id,timed[j].id]);return result;}
+function validateOccurrenceOverride(series,date,override){const allowed=OVERRIDE_FIELDS;eventDetails(override);if(!isRecord(override)||Object.keys(override).some(k=>!allowed.includes(k))||(override.title!==undefined&&(typeof override.title!=='string'||!override.title.trim()||override.title.length>120))||(override.start!==undefined&&!isTime(override.start))||(override.end!==undefined&&!isTime(override.end))||(override.category!==undefined&&!['course','study','rest','personal','deadline'].includes(override.category))||(override.notes!==undefined&&(typeof override.notes!=='string'||override.notes.length>2000))||(override.status!==undefined&&!['draft','confirmed','done','cancelled'].includes(override.status)))throw Error('單次行程覆寫內容不正確。');const start=override.start??series.start,end=override.end??series.end;if(Boolean(start)!==Boolean(end)||(start&&(!isTime(start)||!isTime(end)||end<=start)))throw Error('單次行程覆寫時段不正確。');if(date<series.from||date>series.until||new Date(date+'T12:00:00Z').getUTCDay()!==series.weekday)throw Error('單次行程覆寫日期不屬於此系列。');}
 function parseSchedule(text){
- const data=JSON.parse(text);
- if(!data||!Array.isArray(data.events)||data.events.length>1000)throw new Error('作息檔需要 events 陣列，最多 1000 個事件。');
- const date=value=>{if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value)||new Date(value+'T12:00:00Z').toISOString().slice(0,10)!==value)throw new Error('日期格式不正確。');return value;};
- const time=value=>{if(value===undefined||value==='')return '';if(typeof value!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(value))throw new Error('時間格式不正確。');return value;};
+ if(typeof text!=='string'||text.length>30e6)throw Error('行程匯入文字格式錯誤或超過30MB。');
+ let data;try{data=JSON.parse(text)}catch{throw Error('行程 JSON 無法解析。')}
+ if(!isRecord(data)||!Array.isArray(data.events)||data.events.length>1000)throw new Error('作息檔需要 events 陣列，最多 1000 個事件。');
+ const time=value=>{if(value===undefined||value==='')return '';if(!isTime(value))throw new Error('時間格式不正確。');return value;};
  const events=data.events.map((item,index)=>{
-  if(typeof item.title!=='string'||!item.title.trim()||item.title.length>120)throw new Error('事件名称不正確。');
-  const event={id:typeof item.id==='string'&&item.id.length>0&&item.id.length<=120?item.id:'import-'+index,title:item.title.trim(),start:time(item.start),end:time(item.end),category:['course','study','rest','personal','deadline'].includes(item.category)?item.category:'personal',status:'draft',source:String(item.source??'本機匯入').slice(0,300),notes:String(item.notes??'').slice(0,2000)};
+  if(!isRecord(item)||typeof item.title!=='string'||!item.title.trim()||item.title.length>120)throw new Error('事件名稱不正確。');
+  const id=item.id===undefined||item.id===''?'import-'+index:item.id;if(typeof id!=='string'||!id.trim()||id.length>120)throw Error('事件ID不正確。');
+  if(item.category!==undefined&&!['course','study','rest','personal','deadline'].includes(item.category))throw Error('事件類別不正確。');
+  if(item.source!==undefined&&(typeof item.source!=='string'||item.source.length>300))throw Error('事件來源格式不正確。');
+  if(item.notes!==undefined&&(typeof item.notes!=='string'||item.notes.length>2000))throw Error('事件備註格式不正確。');
+  if(item.status!==undefined&&!['draft','confirmed','done','cancelled'].includes(item.status))throw Error('事件狀態不正確。');
+  const event={...eventDetails(item,{series:item.weekday!==undefined}),id,title:item.title.trim(),start:time(item.start),end:time(item.end),category:item.category??'personal',status:item.status??'draft',source:item.source??'本機匯入',notes:item.notes??''};
+  if(Boolean(event.start)!==Boolean(event.end))throw new Error('行程必須同時提供開始和結束時間，或都留白表示全天。');
   if(event.start&&event.end&&event.end<=event.start)throw new Error('事件結束時間必須晚於開始時間。');
-  if(item.weekday!==undefined){if(!Number.isInteger(item.weekday)||item.weekday<0||item.weekday>6)throw new Error('星期不正確。');event.weekday=item.weekday;event.from=date(item.from);event.until=date(item.until);if(event.until<event.from)throw new Error('週期範圍不正確。');const exclusions=item.excludedDates??[];if(!Array.isArray(exclusions)||exclusions.length>200)throw new Error('單次例外日期格式不正確。');event.excludedDates=[...new Set(exclusions.map(date))];if(event.excludedDates.some(day=>day<event.from||day>event.until||new Date(day+'T12:00:00Z').getUTCDay()!==event.weekday))throw new Error('單次例外日期必須落在重複行程範圍與星期內。');}
-  else event.date=date(item.date);
+  if(item.weekday!==undefined){if(item.date!==undefined||!Number.isInteger(item.weekday)||item.weekday<0||item.weekday>6)throw new Error('星期或週期格式不正確。');event.weekday=item.weekday;event.from=item.from;event.until=item.until;if(!isDate(event.from)||!isDate(event.until)||event.until<event.from)throw new Error('週期範圍不正確。');const exclusions=item.excludedDates??[];if(!Array.isArray(exclusions)||exclusions.length>400)throw new Error('單次例外日期格式不正確。');event.excludedDates=[...new Set(exclusions)];if(event.excludedDates.some(day=>!isDate(day)||day<event.from||day>event.until||new Date(day+'T12:00:00Z').getUTCDay()!==event.weekday))throw new Error('單次例外日期必須落在重複行程範圍與星期內。');
+   if(item.overrides!==undefined){if(!isRecord(item.overrides)||Object.keys(item.overrides).length>400)throw Error('單次行程覆寫格式不正確。');event.overrides={};for(const [day,override] of Object.entries(item.overrides)){if(!isDate(day))throw Error('覆寫日期不正確。');validateOccurrenceOverride(event,day,override);if(event.excludedDates.includes(day))throw Error('同一日期不可同時排除並覆寫行程。');event.overrides[day]=structuredClone(override);}}
+  }else{if(!isDate(item.date))throw Error('單次行程日期不正確。');event.date=item.date;if(item.from!==undefined||item.until!==undefined||item.overrides!==undefined||item.excludedDates!==undefined)throw Error('單次行程不可附帶重複規則。');}
   return event;
  });
  if(new Set(events.map(event=>event.id)).size!==events.length)throw new Error('事件代號重複。');
- const weeks=(Array.isArray(data.weeks)?data.weeks:[]).slice(0,60).map(week=>({number:Number(week.number),start:date(week.start),end:date(week.end),title:String(week.title??'').slice(0,300),focus:String(week.focus??'').slice(0,1200)}));
+ if(data.weeks!==undefined&&(!Array.isArray(data.weeks)||data.weeks.length>60))throw Error('週計畫最多60週且必須為清單。');
+ const weeks=(data.weeks??[]).map((week,index)=>{if(!isRecord(week)||!Number.isInteger(week.number)||week.number<1||week.number>60||!isDate(week.start)||!isDate(week.end)||week.end<week.start||typeof (week.title??'')!=='string'||(week.title??'').length>300||typeof (week.focus??'')!=='string'||(week.focus??'').length>1200)throw Error('週計畫資料不正確。');return {number:week.number,start:week.start,end:week.end,title:week.title??'',focus:week.focus??''};});
+ for(let i=1;i<weeks.length;i++)if(weeks[i].start<=weeks[i-1].end)throw Error('週計畫日期不可重疊或倒序。');
  return {timezone:'Asia/Taipei',status:'draft',events,weeks};
 }
-const escapeICS=value=>String(value??'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/;/g,'\\;').replace(/,/g,'\\,');
-function toICS(events){const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//College OS//Local Calendar//ZH','CALSCALE:GREGORIAN'];const timestamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');for(const event of events){let date=event.date;if(event.weekday!==undefined){const first=new Date(event.from+'T12:00:00Z');while(first.getUTCDay()!==event.weekday)first.setUTCDate(first.getUTCDate()+1);date=first.toISOString().slice(0,10);}if(!date)continue;const compact=date.replace(/-/g,'');lines.push('BEGIN:VEVENT',`UID:${escapeICS(event.id)}@college-os.local`,`DTSTAMP:${timestamp}`,`SUMMARY:${escapeICS(event.title)}`);if(event.start){lines.push(`DTSTART;TZID=Asia/Taipei:${compact}T${event.start.replace(':','')}00`);if(event.end)lines.push(`DTEND;TZID=Asia/Taipei:${compact}T${event.end.replace(':','')}00`);}else lines.push(`DTSTART;VALUE=DATE:${compact}`);if(event.weekday!==undefined){lines.push(`RRULE:FREQ=WEEKLY;UNTIL=${event.until.replace(/-/g,'')}T155959Z`);if(event.excludedDates?.length)lines.push(`EXDATE;TZID=Asia/Taipei:${event.excludedDates.map(d=>d.replace(/-/g,'')+'T'+(event.start??'00:00').replace(':','')+'00').join(',')}`);}lines.push(`DESCRIPTION:${escapeICS(event.notes??'')}\\n${escapeICS(event.source??'自行新增')} ${event.status==='draft'?'待核對':''}`,'END:VEVENT');}lines.push('END:VCALENDAR');return lines.join('\r\n')+'\r\n';}
+const escapeICS=value=>String(value??'').replace(/\\/g,'\\\\').replace(/\r\n|\n|\r/g,'\\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'').replace(/;/g,'\\;').replace(/,/g,'\\,');
+function foldICS(line){const out=[];let part='',bytes=0;for(const char of line){const size=new TextEncoder().encode(char).length;if(bytes+size>73){out.push(part);part=' ';bytes=1;}part+=char;bytes+=size;}out.push(part);return out.join('\r\n');}
+function toICS(events) {
+  if (!Array.isArray(events) || events.length > 10000)
+    throw Error('ICS行程筆數不正確。');
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//College OS//Local Calendar//ZH', 'CALSCALE:GREGORIAN'];
+  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  const weekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  const addEvent = (event, date, uid, recurrenceId = null, extraLines = []) => {
+    const compact = date.replace(/-/g, '');
+    const start = event.start ?? '', end = event.end ?? '';
+    if (Boolean(start) !== Boolean(end) || (start && (!isTime(start) || !isTime(end) || end <= start)))
+      throw Error('ICS行程時間不完整或不正確。');
+    lines.push('BEGIN:VEVENT', `UID:${escapeICS(uid)}@college-os.local`, `DTSTAMP:${timestamp}`);
+    if (recurrenceId) {
+      const value = recurrenceId.date.replace(/-/g, '') + (start ? `T${recurrenceId.start.replace(':', '')}00` : '');
+      lines.push(`${start ? 'RECURRENCE-ID;TZID=Asia/Taipei' : 'RECURRENCE-ID;VALUE=DATE'}:${value}`);
+    }
+    lines.push(`SUMMARY:${escapeICS(event.title)}`);
+    if (start) lines.push(`DTSTART;TZID=Asia/Taipei:${compact}T${start.replace(':', '')}00`, `DTEND;TZID=Asia/Taipei:${compact}T${end.replace(':', '')}00`);
+    else lines.push(`DTSTART;VALUE=DATE:${compact}`, `DTEND;VALUE=DATE:${nextDate(date).replace(/-/g, '')}`);
+    if (event.notes !== undefined && typeof event.notes !== 'string') throw Error('ICS備註必須為文字。');
+    const detail=[event.notes, event.subject&&`科目：${event.subject}`,event.teacher&&`老師：${event.teacher}`,event.room&&`教室：${event.room}`,event.outcome&&`成果：${event.outcome}`,event.method&&`方法：${event.method}`].filter(Boolean).join('\n');
+    lines.push(...extraLines, `STATUS:${event.status==='cancelled'?'CANCELLED':event.status==='draft'?'TENTATIVE':'CONFIRMED'}`, `DESCRIPTION:${escapeICS(detail)}`, 'END:VEVENT');
+  };
+  for (const event of events) {
+    const recurring = isRecord(event) && event.weekday !== undefined;
+    if (!isRecord(event) || (!recurring && !isDate(event.date)) ||
+      (recurring && (!Number.isInteger(event.weekday) || event.weekday < 0 || event.weekday > 6 || !isDate(event.from) || !isDate(event.until) || event.until < event.from)) ||
+      typeof event.id !== 'string' || !event.id.trim() || typeof event.title !== 'string' || !event.title.trim())
+      throw Error('ICS 行程缺少有效日期、ID或名稱。');
+    if (event.excludedDates !== undefined && (!Array.isArray(event.excludedDates) || event.excludedDates.some(day => !isDate(day) || day < event.from || day > event.until || new Date(day + 'T12:00:00Z').getUTCDay() !== event.weekday)))
+      throw Error('ICS例外日期不正確。');
+    if (!recurring) {
+      addEvent(event, event.date, event.id);
+      continue;
+    }
+    if (event.overrides !== undefined && (!isRecord(event.overrides) || Object.keys(event.overrides).length > 400))
+      throw Error('ICS單次行程覆寫格式不正確。');
+    for (const [date, override] of Object.entries(event.overrides ?? {})) {
+      const allowed = OVERRIDE_FIELDS;eventDetails(override);
+      if (!isDate(date) || date < event.from || date > event.until || new Date(date + 'T12:00:00Z').getUTCDay() !== event.weekday || (event.excludedDates ?? []).includes(date) || !isRecord(override) || Object.keys(override).some(key => !allowed.includes(key)))
+        throw Error('ICS單次行程覆寫格式不正確。');
+      const detached = { ...event, ...override };
+      if (typeof detached.title !== 'string' || !detached.title.trim()) throw Error('ICS覆寫名稱不正確。');
+      addEvent(detached, date, event.id, { date, start: event.start ?? '00:00' });
+    }
+    let first = event.from;
+    while (new Date(first + 'T12:00:00Z').getUTCDay() !== event.weekday) first = nextDate(first);
+    if (first > event.until) continue;
+    const until = event.until.replace(/-/g, '') + (event.start ? 'T155959Z' : '');
+    const extraLines = [`RRULE:FREQ=WEEKLY;BYDAY=${weekdays[event.weekday]};UNTIL=${until}`];
+    if (event.excludedDates?.length) {
+      const values = event.excludedDates.map(date => date.replace(/-/g, '') + (event.start ? `T${event.start.replace(':', '')}00` : ''));
+      extraLines.push(`${event.start ? 'EXDATE;TZID=Asia/Taipei' : 'EXDATE;VALUE=DATE'}:${values.join(',')}`);
+    }
+    addEvent(event, first, event.id, null, extraLines);
+  }
+  lines.push('END:VCALENDAR');
+  return lines.map(foldICS).join('\r\n') + '\r\n';
+}
+function nextDate(date){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10);}
 
-const minutes=t=>Number(t.slice(0,2))*60+Number(t.slice(3));
-const clock=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
-function range(anchor,period){const d=new Date(anchor+'T12:00:00Z');if(period==='week')d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);else d.setUTCDate(1);if(period==='quarter')d.setUTCMonth(Math.floor(d.getUTCMonth()/3)*3);const end=new Date(d);if(period==='week')end.setUTCDate(end.getUTCDate()+7);else end.setUTCMonth(end.getUTCMonth()+(period==='quarter'?3:1));const out=[];for(;d<end;d.setUTCDate(d.getUTCDate()+1))out.push(d.toISOString().slice(0,10));return out;}
-function subtract(start,end,blocks){let free=[[start,end]];for(const [a,b] of blocks)free=free.flatMap(([s,e])=>b<=s||a>=e?[[s,e]]:[[s,Math.min(a,e)],[Math.max(b,s),e]].filter(([x,y])=>y>x));return free;}
-function pert(o,m,p){if(![o,m,p].every(Number.isFinite)||o<0||o>m||m>p)throw Error('估時需符合：0 ≤ 樂觀 ≤ 最可能 ≤ 悲觀');return (o+4*m+p)/6;}
-function mergeIntervals(intervals){const sorted=intervals.map(x=>[...x]).sort((a,b)=>a[0]-b[0]),out=[];for(const x of sorted){const last=out.at(-1);if(last&&x[0]<=last[1])last[1]=Math.max(last[1],x[1]);else out.push(x);}return out;}
-function parseWindows(text){if(!text.trim())return [];return text.split(/[,，\n]/).map(part=>{const match=part.trim().match(/^([0-2]\d:[0-5]\d)\s*[-–]\s*([0-2]\d:[0-5]\d)$/);if(!match||minutes(match[1])>=1440||minutes(match[2])>=1440||match[2]<=match[1])throw Error('時段格式：08:00-10:00,18:30-22:15；跨午夜請拆分');return {start:match[1],end:match[2]};});}
-function capacity(date,state,cutoff=0){const day=state.overrides?.[date]||state.days[new Date(date+'T12:00:00Z').getUTCDay()],events=eventsOn(state.events,date),windows=day.windows??[{start:day.start,end:day.end}],blocked=events.filter(e=>e.start&&e.end).map(e=>[minutes(e.start),minutes(e.end)]),free=mergeIntervals(windows.map(w=>[Math.max(cutoff,minutes(w.start)),minutes(w.end)]).filter(([a,b])=>b>a)).flatMap(([a,b])=>subtract(a,b,blocked));const slots=[];for(const [a,b] of free){for(let s=a;s<b;s+=state.settings.focus+state.settings.rest){const n=Math.min(state.settings.focus,b-s);if(n>=state.settings.minBlock)slots.push({date,start:s,end:s+n});}}const raw=slots.reduce((s,x)=>s+x.end-x.start,0);return {date,free,slots,raw,budget:Math.floor(Math.min(raw,day.hours*60)*(1-state.settings.buffer/100))};}
-function plan(state,dates,now=null){const days=dates.map(d=>({...capacity(d,state,now?.date===d?now.minute:0),used:0,ids:new Set(),blocks:[]})),pending=state.tasks.filter(t=>!t.done&&t.active),tasks=[...pending].sort((a,b)=>(a.deadline||'9999').localeCompare(b.deadline||'9999')||b.priority-a.priority),remaining=new Map(tasks.map(t=>[t.id,Math.ceil(t.remaining)])),unplaced=[];let changed=true;while(changed){changed=false;for(const t of tasks){if(remaining.get(t.id)<=0)continue;if(t.depends&&state.tasks.some(x=>x.id===t.depends&&!x.done)&&remaining.get(t.depends)!==0)continue;const predecessor=days.flatMap(d=>d.blocks).filter(b=>b.id===t.depends).at(-1);for(const d of days){if(t.deadline&&d.date>t.deadline)continue;if(d.ids.size>=state.settings.limit&&!d.ids.has(t.id))continue;for(const slot of d.slots){const after=predecessor?(d.date<predecessor.date?Infinity:d.date===predecessor.date?predecessor.end:0):0;let start=Math.max(slot.start,after);const n=Math.min(slot.end-start,d.budget-d.used,remaining.get(t.id));if(n<=0||(n<state.settings.minBlock&&n<remaining.get(t.id)))continue;d.blocks.push({id:t.id,title:t.title,date:d.date,start,end:start+n});slot.start=start+n+state.settings.rest;d.used+=n;d.ids.add(t.id);remaining.set(t.id,remaining.get(t.id)-n);changed=true;if(remaining.get(t.id)<=0)break;}if(remaining.get(t.id)<=0)break;}}}for(const t of tasks)if(remaining.get(t.id)>0)unplaced.push({...t,missing:remaining.get(t.id)});return {days,unplaced,demand:tasks.reduce((s,t)=>s+t.remaining,0),capacity:days.reduce((s,d)=>s+d.budget,0),scheduled:days.reduce((s,d)=>s+d.used,0)};}
-function validate(s){if(!s||s.version!==1||!Array.isArray(s.tasks)||s.tasks.length>1000||!Array.isArray(s.events)||s.events.length>1000||!Array.isArray(s.days)||s.days.length!==7)throw Error('備份格式不正確');const num=(n,a,b)=>Number.isFinite(n)&&n>=a&&n<=b;const time=t=>typeof t==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(t);const date=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&!isNaN(Date.parse(d))&&new Date(d+'T12:00:00Z').toISOString().slice(0,10)===d;if(!s.settings||!num(s.settings.focus,5,180)||!num(s.settings.rest,1,60)||!num(s.settings.minBlock,5,180)||!num(s.settings.buffer,0,80)||!Number.isInteger(s.settings.limit)||!num(s.settings.limit,1,10))throw Error('設定超出範圍');if(s.settings.minBlock>s.settings.focus)throw Error('最小區段不可大於每次專注時間');const checkDay=d=>{if(!d||!num(d.hours,0,24))throw Error('工時上限不正確');if(d.windows!==undefined){if(!Array.isArray(d.windows)||d.windows.length>12||d.windows.some(w=>!time(w.start)||!time(w.end)||w.end<=w.start))throw Error('可用時段不正確');}else if(!time(d.start)||!time(d.end)||d.end<=d.start)throw Error('可用時段不正確');};s.days.forEach(checkDay);if(s.overrides!==undefined){if(!s.overrides||typeof s.overrides!=='object'||Array.isArray(s.overrides)||Object.keys(s.overrides).length>400)throw Error('單日設定不正確');for(const [d,x] of Object.entries(s.overrides)){if(!date(d))throw Error('單日日期不正確');checkDay(x);}}if(s.goals!==undefined&&(!Array.isArray(s.goals)||s.goals.length>200||s.goals.some(g=>!g||typeof g.id!=='string'||typeof g.title!=='string'||!g.title.trim()||g.title.length>200||!['month','quarter'].includes(g.period)||!date(g.date))))throw Error('目標資料不正確');const ids=new Set();for(const t of s.tasks){if(typeof t.id!=='string'||ids.has(t.id)||typeof t.title!=='string'||!t.title.trim()||t.title.length>200||!num(t.remaining,0,100000)||!num(t.priority,1,3)||(t.deadline&&!date(t.deadline))||typeof t.active!=='boolean'||typeof t.done!=='boolean')throw Error('任務資料不正確');ids.add(t.id);}for(const t of s.tasks)if(t.depends&&(!ids.has(t.depends)||t.depends===t.id))throw Error('前置任務不正確');for(const t of s.tasks){const seen=new Set([t.id]);let x=t;while(x.depends){if(seen.has(x.depends))throw Error('任務存在循環依賴');seen.add(x.depends);x=s.tasks.find(y=>y.id===x.depends);}}for(const e of s.events)if(typeof e.title!=='string'||!time(e.start)||!time(e.end)||e.end<=e.start||(!date(e.date)&&!(Number.isInteger(e.weekday)&&e.weekday>=0&&e.weekday<=6&&date(e.from)&&date(e.until)&&e.until>=e.from)))throw Error('行程資料不正確');if(s.logs!==undefined&&(!Array.isArray(s.logs)||s.logs.length>10000||s.logs.some(x=>!x||typeof x.task!=='string'||!date(x.date)||!num(x.minutes,0,1440))))throw Error('計時紀錄不正確');if(s.timer!==undefined&&s.timer!==null&&(!['focus','rest'].includes(s.timer.mode)||!Number.isFinite(s.timer.until)||(s.timer.mode==='focus'&&(!ids.has(s.timer.task)||!Number.isFinite(s.timer.started)||s.timer.until<s.timer.started))))throw Error('計時狀態不正確');if(s.confirmed!==undefined&&(!s.confirmed||typeof s.confirmed.at!=='string'||!Array.isArray(s.confirmed.blocks)||s.confirmed.blocks.length>10000||s.confirmed.blocks.some(b=>!b||typeof b.title!=='string'||!date(b.date)||!num(b.start,0,1439)||!num(b.end,1,1440)||b.end<=b.start)))throw Error('排程快照不正確');return s;}
+return {weekDates,eventsOn,workloadByDay,excludeOccurrence,detachOccurrence,conflicts,parseSchedule,toICS};
+})();
+__modules[7]=(()=>{
+const {eventsOn}=__modules[6];
+const {minutes,subtract,mergeIntervals}=__modules[3];
+function capacity(date, state, cutoff = 0) {
+  const day =
+      state.overrides?.[date] ||
+      state.days[new Date(date + "T12:00:00Z").getUTCDay()],
+    events = eventsOn(state.events, date),
+    windows = day.windows ?? [{ start: day.start, end: day.end }],
+    blocked = events
+      .filter((e) => e.status !== "cancelled" && e.start && e.end)
+      .map((e) => [minutes(e.start), minutes(e.end)]),
+    free = mergeIntervals(
+      windows
+        .map((w) => [Math.max(cutoff, minutes(w.start)), minutes(w.end)])
+        .filter(([a, b]) => b > a),
+    ).flatMap(([a, b]) => subtract(a, b, blocked));
+  const slots = [];
+  for (const [a, b] of free) {
+    for (let s = a; s < b; s += state.settings.focus + state.settings.rest) {
+      const n = Math.min(state.settings.focus, b - s);
+      if (n >= state.settings.minBlock)
+        slots.push({ date, start: s, end: s + n });
+    }
+  }
+  const raw = slots.reduce((s, x) => s + x.end - x.start, 0);
+  return {
+    date,
+    free,
+    slots,
+    raw,
+    budget: Math.floor(
+      Math.min(raw, day.hours * 60) * (1 - state.settings.buffer / 100),
+    ),
+  };
+}
 
-const $=id=>document.getElementById(id),key='college-capacity-planner-v1',today=new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'}),weekdays=['日','一','二','三','四','五','六'];
-const fresh=()=>({version:1,settings:{limit:2,buffer:20,focus:50,rest:10,minBlock:20},days:Array.from({length:7},(_,i)=>({start:'18:30',end:'22:15',hours:[4,2,2,2,4,4,4][i]})),tasks:[],events:[],goals:[],overrides:{},logs:[],timer:null});let editing=null, revision=0;let state=fresh();try{const saved=localStorage.getItem(key);if(saved)state=validate(JSON.parse(saved));}catch(e){$('status').textContent='原資料無法讀取，未覆寫。可用備份還原：'+e.message;}
-function nowCutoff(){const d=new Date();return {date:d.toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'}),minute:Number(d.toLocaleTimeString('en-GB',{timeZone:'Asia/Taipei',hour12:false}).slice(0,2))*60+Number(d.toLocaleTimeString('en-GB',{timeZone:'Asia/Taipei',hour12:false}).slice(3,5))};}
-function currentPlan(){return plan(state,range($('anchor').value||today,$('period').value).filter(d=>d>=nowCutoff().date),nowCutoff());}
-function save(){validate(state);revision++;state.revision=revision;try{localStorage.setItem(key,JSON.stringify(state));}catch{throw Error('儲存失敗，請立即匯出備份');}}
-function safe(fn){return (...args)=>{try{fn(...args);}catch(e){$('status').textContent=e.message;}};}
-function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
-function btn(text,fn){const b=node('button',text);b.type='button';b.onclick=safe(fn);return b;}
-const hours=n=>(n/60).toFixed(1)+' 小時';revision=state.revision||0;const initial=new Date(today+'T12:00:00Z');if(initial.getUTCDay()===0)initial.setUTCDate(initial.getUTCDate()+1);$('anchor').value=initial.toISOString().slice(0,10);document.querySelector('[name=date]').value=today;
-for(const b of document.querySelectorAll('[data-tab]'))b.onclick=()=>{for(const s of ['overview','tasks','settings','tools','goals'])$(s).hidden=s!==b.dataset.tab;};
-function render(){const confirmed=state.confirmed;$('confirmed-note').textContent=confirmed?`確認於 ${confirmed.at}。${confirmed.revision===revision?'設定與任務未變更。':'資料已變更，請重新檢查建議排程；原確認紀錄保留。'}`:'尚未確認排程。';$('confirmed').replaceChildren();if(confirmed)for(const b of confirmed.blocks)$('confirmed').append(node('div',`${b.date} ${clock(b.start)}–${clock(b.end)} ${b.title}`,'block'));const dates=range($('anchor').value||today,$('period').value),p=currentPlan();$('range').textContent=`${dates[0]} ～ ${dates.at(-1)} · 僅安排今天起的時段；月／季為容量預估`;$('metrics').replaceChildren();for(const [label,value] of [['可承諾容量',hours(p.capacity)],['工作需求',hours(p.demand)],['建議已排',hours(p.scheduled)],['容量利用率',p.capacity?(100*p.demand/p.capacity).toFixed(0)+'%':'無可排時間']]){const x=node('article',undefined,'metric');x.append(node('span',label),node('strong',value));$('metrics').append(x);}$('warnings').replaceChildren();if(!p.unplaced.length)$('warnings').append(node('p',state.tasks.some(t=>t.active&&!t.done)?'目前選取工作可排入。':'先加入工作與確認可用時段，再計算。'));for(const t of p.unplaced)$('warnings').append(node('div',`${t.title}：尚有 ${hours(t.missing)} 未排入${t.deadline?'；截止 '+t.deadline:'；期限未確認'}。請檢查前置工作、期限、時段或件數上限。`,'warning'));
-$('schedule').replaceChildren();for(const d of p.days){const x=node('article',undefined,'panel day');x.append(node('h3',`${d.date}（${weekdays[new Date(d.date+'T12:00:00Z').getUTCDay()]}）`),node('p',`容量 ${hours(d.budget)} ／ 已排 ${hours(d.used)} ／ 主要工作 ${d.ids.size}/${state.settings.limit}`));for(const b of d.blocks)x.append(node('div',`${clock(b.start)}–${clock(b.end)}　${b.title}`,'block'));if(!d.blocks.length)x.append(node('p','沒有安排工作，保留休息與彈性。'));$('schedule').append(x);}
-renderGoals();$('task-list').replaceChildren();$('depends').replaceChildren(new Option('無前置任務',''));const selected=$('focus-task').value;$('focus-task').replaceChildren(new Option('選擇要記錄的工作',''));for(const t of state.tasks){if(t.id!==editing)$('depends').add(new Option(t.title,t.id));if(!t.done)$('focus-task').add(new Option(t.title,t.id));const x=node('article',undefined,'panel task'),content=node('div',undefined,'content');content.append(node('h3',t.title),node('p',`剩餘 ${hours(t.remaining)} · ${t.deadline||'期限待確認'} · ${t.done?'已完成':t.active?'參與排程':'暫存'}`),node('p',t.outcome||'完成條件待補充'));x.append(content,btn('編輯工作',()=>{editing=t.id;render();const f=$('task-form');for(const k of ['title','deadline','priority','outcome','depends','goal'])f.elements[k].value=t[k]||'';f.elements.hours.value=t.remaining/60;f.elements.active.checked=t.active;$('task-submit').textContent='保存修改';$('cancel-edit').hidden=false;f.scrollIntoView({behavior:'smooth'});}),btn(t.active?'暫停推進':'開始推進',()=>{t.active=!t.active;save();render();}),btn('修改剩餘工時',()=>{const v=prompt('剩餘小時',t.remaining/60);if(v===null)return;const n=Number(v);if(!v.trim()||!Number.isFinite(n)||n<0||n>1000)throw Error('請輸入0～1000小時');t.remaining=n*60;save();render();}),btn(t.done?'重新開啟':'確認完成',()=>{t.done=!t.done;save();render();}),btn('刪除',()=>{if(state.timer?.task===t.id)throw Error('請先結束這件工作的計時');if(!confirm('刪除此工作？'))return;if(state.tasks.some(x=>x.depends===t.id))throw Error('其他工作依賴此任務，請先移除依賴');state.tasks=state.tasks.filter(x=>x.id!==t.id);save();render();}));$('task-list').append(x);}if(state.tasks.some(t=>t.id===selected))$('focus-task').value=selected;
-$('events').replaceChildren();for(const e of state.events)$('events').append(node('p',`${e.title} · ${e.date||'每週'+weekdays[e.weekday]} ${e.start}–${e.end}`),btn('移除事件',()=>{state.events=state.events.filter(x=>x.id!==e.id);save();render();}));}
-$('task-form').onsubmit=safe(e=>{e.preventDefault();const f=new FormData(e.target);const item={id:editing||crypto.randomUUID(),title:f.get('title').trim(),remaining:Number(f.get('hours'))*60,deadline:f.get('deadline'),priority:Number(f.get('priority')),outcome:f.get('outcome'),goal:f.get('goal'),depends:f.get('depends'),active:f.has('active'),done:editing?state.tasks.find(t=>t.id===editing).done:false};const next={...state,tasks:editing?state.tasks.map(t=>t.id===editing?item:t):[...state.tasks,item]};validate(next);state=next;save();editing=null;e.target.reset();$('task-submit').textContent='加入工作';$('cancel-edit').hidden=true;render();});
-$('days').replaceChildren();state.days.forEach((d,i)=>{const x=node('div',undefined,'form-grid');x.append(node('strong','週'+weekdays[i]));const l=node('label','可用時段（可多段；空白不排）'),input=node('input');input.name=`day-${i}-windows`;input.value=(d.windows??[{start:d.start,end:d.end}]).map(w=>w.start+'-'+w.end).join(',');input.placeholder='08:00-10:00,18:30-22:15';l.append(input);x.append(l);const h=node('label','每日淨工時上限'),n=node('input');n.name=`day-${i}-hours`;n.type='number';n.value=d.hours;n.min=0;n.max=24;n.step=.25;n.required=true;h.append(n);x.append(h);$('days').append(x);});for(const [k,v] of Object.entries(state.settings))document.querySelector(`[name=${k}]`).value=v;
-$('settings-form').onsubmit=safe(e=>{e.preventDefault();const next=structuredClone(state),f=new FormData(e.target);for(const k of Object.keys(next.settings))next.settings[k]=Number(f.get(k));next.days.forEach((d,i)=>{d.windows=parseWindows(f.get(`day-${i}-windows`));d.hours=Number(f.get(`day-${i}-hours`));});validate(next);state=next;save();render();$('status').textContent='已保存。建議排程已重新計算。';});
-$('event-form').onsubmit=safe(e=>{e.preventDefault();const f=new FormData(e.target),date=f.get('date'),item={id:crypto.randomUUID(),title:f.get('title').trim(),date,start:f.get('start'),end:f.get('end')};if(item.end<=item.start)throw Error('結束需晚於開始；跨午夜請拆成兩個事件');if(f.has('repeat')){item.weekday=new Date(date+'T12:00:00Z').getUTCDay();item.from=date;item.until=range(date,'quarter').at(-1);delete item.date;}const next={...state,events:[...state.events,item]};validate(next);state=next;save();render();e.target.reset();e.target.elements.date.value=today;});
-for(const id of ['period','anchor'])$(id).onchange=safe(render);$('replan').onclick=safe(render);$('print').onclick=()=>window.print();
-$('backup').onclick=safe(()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=node('a');a.href=u;a.download=`時間規劃備份-${today}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);});
-$('restore').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;if(f.size>2e6)throw Error('檔案不可超過2MB');const next=validate(JSON.parse(await f.text()));if(!confirm('以備份取代目前規劃？建議先匯出目前資料。'))return;next.timer=null;state=next;save();location.reload();}catch(err){$('status').textContent=err.message;}finally{e.target.value='';}};
-$('calculate').onclick=safe(()=>{const [a,b,c]=['a','b','c'].map(id=>Number($(id).value));if(![a,b,c].every(Number.isFinite)||[a,b,c].some(x=>x<0))throw Error('請輸入非負數字');const type=$('calc-type').value;let result;if(type==='pert')result=`( ${a} + 4 × ${b} + ${c} ) ÷ 6 = ${pert(a,b,c).toFixed(2)} 小時`;if(type==='video'){if(b<=0)throw Error('倍速需大於零');result=`${a} ÷ ${b} + ${c} = ${(a/b+c).toFixed(1)} 分鐘`;}if(type==='quiz')result=`${a} × ${b} + ${c} = ${(a*b+c).toFixed(1)} 分鐘`;if(type==='saving')result=`${a} × ${b} − ${c} = ${(a*b-c).toFixed(1)} 分鐘淨節省`;$('calc-result').textContent=result;});
-function recordTimer(){const t=state.timer;if(!t||t.mode!=='focus')return;const used=Math.max(0,Math.min(Date.now(),t.until)-t.started)/60000;state.logs??=[];state.logs.push({task:t.task,date:new Date(t.started).toLocaleDateString('sv-SE',{timeZone:'Asia/Taipei'}),minutes:used});const task=state.tasks.find(x=>x.id===t.task);if(task)task.remaining=Math.max(0,task.remaining-used);}
-function tick(){const t=state.timer;if(!t){$('timer').textContent='尚未開始';$('start').disabled=false;$('stop').disabled=true;return;}if(Date.now()>=t.until){if(t.mode==='focus'){recordTimer();state.timer={mode:'rest',until:Date.now()+state.settings.rest*60000};}else state.timer=null;try{save();render();}catch(e){$('status').textContent=e.message;}}const current=state.timer;$('start').disabled=!!current;$('stop').disabled=!current||current.mode==='rest';$('timer').textContent=current?`${current.mode==='focus'?'專注':'休息'} ${Math.max(0,Math.ceil((current.until-Date.now())/1000))} 秒`:'可開始下一段';}
-$('start').onclick=safe(()=>{if(state.timer)return;const task=$('focus-task').value;if(!task)throw Error('先選擇任務');state.timer={mode:'focus',task,started:Date.now(),until:Date.now()+state.settings.focus*60000};save();tick();});$('stop').onclick=safe(()=>{if(state.timer?.mode!=='focus')return;recordTimer();state.timer={mode:'rest',until:Date.now()+state.settings.rest*60000};save();render();tick();});render();tick();setInterval(tick,1000);
+return {capacity};
+})();
+__modules[8]=(()=>{
+const {capacity}=__modules[7];
+const {validate,validPlannerDate}=__modules[2];
+function plan(state, dates, now = null) {
+  validate(state);
+  if (
+    !Array.isArray(dates) ||
+    dates.length > 3660 ||
+    dates.some((d) => !validPlannerDate(d))
+  )
+    throw Error("排程日期不正確");
+  dates = [...new Set(dates)].sort();
+  if (
+    now &&
+    (!validPlannerDate(now.date) ||
+      !Number.isInteger(now.minute) ||
+      now.minute < 0 ||
+      now.minute > 1440)
+  )
+    throw Error("目前時間不正確");
+  const days = dates.map((d) => ({
+      ...capacity(d, state, now?.date === d ? now.minute : 0),
+      used: 0,
+      ids: new Set(),
+      blocks: [],
+    })),
+    pending = state.tasks.filter((t) => !t.done && t.active),
+    index = new Map(state.tasks.map((t) => [t.id, t])),
+    pendingIds = new Set(pending.map((t) => t.id)),
+    due = new Map(pending.map((t) => [t.id, t.deadline || "9999"])),
+    priority = new Map(pending.map((t) => [t.id, t.priority]));
+  // A required predecessor shares its descendant's deadline and importance.
+  for (const task of pending) {
+    let parent = index.get(task.depends);
+    while (parent && !parent.done) {
+      if (pendingIds.has(parent.id)) {
+        due.set(
+          parent.id,
+          [due.get(parent.id), task.deadline || "9999"].sort()[0],
+        );
+        priority.set(
+          parent.id,
+          Math.max(priority.get(parent.id), task.priority),
+        );
+      }
+      parent = index.get(parent.depends);
+    }
+  }
+  const sorted = [...pending].sort(
+      (a, b) =>
+        due.get(a.id).localeCompare(due.get(b.id)) ||
+        priority.get(b.id) - priority.get(a.id),
+    ),
+    tasks = [],
+    visited = new Set();
+  function visit(task) {
+    if (visited.has(task.id)) return;
+    visited.add(task.id);
+    const parent = index.get(task.depends);
+    if (parent && pendingIds.has(parent.id)) visit(parent);
+    tasks.push(task);
+  }
+  sorted.forEach(visit);
+  const remaining = new Map(tasks.map((t) => [t.id, Math.ceil(t.remaining)])),
+    completionTimes = new Map();
+  for (const task of tasks) {
+    if (remaining.get(task.id) <= 0) continue;
+    const parent = index.get(task.depends);
+    if (parent && !parent.done && !completionTimes.has(parent.id)) continue;
+    const predecessor = completionTimes.get(task.depends);
+    for (const day of days) {
+      if (task.deadline && day.date > task.deadline) continue;
+      if (day.ids.size >= state.settings.limit && !day.ids.has(task.id))
+        continue;
+      for (const slot of day.slots) {
+        let after = predecessor
+            ? day.date < predecessor.date
+              ? Infinity
+              : day.date === predecessor.date
+                ? predecessor.end + state.settings.rest
+                : 0
+            : 0,
+          start = Math.max(slot.start, after);
+        // Protect rest across different windows, not only within one focus slot.
+        const previous = day.blocks
+          .filter((b) => b.end <= start)
+          .sort((a, b) => b.end - a.end)[0];
+        if (previous)
+          start = Math.max(start, previous.end + state.settings.rest);
+        const next = day.blocks
+            .filter((b) => b.start >= start)
+            .sort((a, b) => a.start - b.start)[0],
+          end = Math.min(
+            slot.end,
+            next ? next.start - state.settings.rest : Infinity,
+          ),
+          n = Math.min(
+            end - start,
+            day.budget - day.used,
+            remaining.get(task.id),
+          );
+        if (
+          n <= 0 ||
+          (n < state.settings.minBlock && n < remaining.get(task.id))
+        )
+          continue;
+        const block = {
+          id: task.id,
+          title: task.title,
+          date: day.date,
+          start,
+          end: start + n,
+        };
+        day.blocks.push(block);
+        slot.start = block.end + state.settings.rest;
+        day.used += n;
+        day.ids.add(task.id);
+        remaining.set(task.id, remaining.get(task.id) - n);
+        if (remaining.get(task.id) === 0) {
+          completionTimes.set(task.id, block);
+          break;
+        }
+      }
+      if (remaining.get(task.id) === 0) break;
+    }
+  }
+  for (const day of days) day.blocks.sort((a, b) => a.start - b.start);
+  const unplaced = tasks
+      .filter((t) => remaining.get(t.id) > 0)
+      .map((t) => ({
+        ...t,
+        missing: remaining.get(t.id),
+        reason:
+          t.depends &&
+          !index.get(t.depends).done &&
+          !completionTimes.has(t.depends)
+            ? "前置工作尚未完成或未排入"
+            : "期限、可用時段或件數不足",
+      })),
+    verification = tasks.filter((t) => t.remaining === 0);
+  return {
+    days,
+    unplaced,
+    verification,
+    demand: tasks.reduce((n, t) => n + Math.ceil(t.remaining), 0),
+    capacity: days.reduce((n, d) => n + d.budget, 0),
+    scheduled: days.reduce((n, d) => n + d.used, 0),
+  };
+}
 
-$('cancel-edit').onclick=()=>{editing=null;$('task-form').reset();$('task-submit').textContent='加入工作';$('cancel-edit').hidden=true;render();};
-$('import-existing').onclick=safe(()=>{const old=JSON.parse(localStorage.getItem('college-os-v1')||'{}');const events=parseSchedule(JSON.stringify({events:(old.events||[]).filter(e=>e.category!=='study'&&e.start&&e.end)})).events;if(!events.length)throw Error('此瀏覽器沒有可讀取的原日曆固定事件');const map=new Map(state.events.map(e=>[e.id,e]));let added=0;for(const e of events)if(!map.has(e.id)){map.set(e.id,e);added++;}const next={...state,events:[...map.values()]};validate(next);state=next;save();render();$('status').textContent=`已讀取 ${added} 個固定事件；重複ID保留目前版本。`;});
-$('confirm-plan').onclick=safe(()=>{const p=currentPlan();state.confirmed={at:new Date().toLocaleString('zh-TW',{timeZone:'Asia/Taipei'}),revision:revision+1,blocks:p.days.flatMap(d=>d.blocks)};save();render();$('status').textContent=`已保存排程快照。${p.unplaced.length} 件工作仍有未排入時間，保留在缺口清單。`;});
+return {plan};
+})();
+__modules[9]=(()=>{
+// Stable API for callers; implementation modules have no DOM dependencies.
 
-function renderGoals(){const old=$('task-goal').value;$('task-goal').replaceChildren(new Option('未指定目標',''));$('goal-list').replaceChildren();for(const g of state.goals||[]){$('task-goal').add(new Option(g.title,g.id));const tasks=state.tasks.filter(t=>t.goal===g.id),done=tasks.filter(t=>t.done).length,x=node('article',undefined,'panel');x.append(node('h3',g.title),node('p',`${g.period==='month'?'月':'季'}目標 · ${g.date} · 完成 ${done}/${tasks.length} 件${tasks.length?'（'+Math.round(done/tasks.length*100)+'%）':''} · 剩餘 ${hours(tasks.filter(t=>!t.done).reduce((n,t)=>n+t.remaining,0))}`),btn('刪除目標',()=>{if(!confirm('刪除目標？其任務會保留。'))return;state.goals=state.goals.filter(x=>x.id!==g.id);state.tasks.forEach(t=>{if(t.goal===g.id)t.goal='';});save();render();}));$('goal-list').append(x);}if((state.goals||[]).some(g=>g.id===old))$('task-goal').value=old;$('overrides').replaceChildren();for(const [date,d] of Object.entries(state.overrides||{}).sort())$('overrides').append(node('p',`${date} · ${d.windows.map(w=>w.start+'–'+w.end).join('、')||'不排工作'} · 上限 ${d.hours} 小時`),btn('恢復每週設定',()=>{delete state.overrides[date];save();render();}));const logs=state.logs||[];$('log-summary').textContent=`累計 ${logs.length} 段，實際投入 ${hours(logs.reduce((n,l)=>n+l.minutes,0))}。以下顯示最近20段。`;$('log-list').replaceChildren();for(const l of logs.slice(-20).reverse())$('log-list').append(node('p',`${l.date} · ${state.tasks.find(t=>t.id===l.task)?.title||'已刪除工作'} · ${l.minutes.toFixed(1)} 分鐘`));}
-$('goal-form').elements.date.value=today;$('override-form').elements.date.value=today;
-$('goal-form').onsubmit=safe(e=>{e.preventDefault();const f=new FormData(e.target),next={...state,goals:[...(state.goals||[]),{id:crypto.randomUUID(),title:f.get('title').trim(),date:f.get('date'),period:f.get('period')}]};validate(next);state=next;save();render();e.target.reset();e.target.elements.date.value=today;});
-$('override-form').onsubmit=safe(e=>{e.preventDefault();const f=new FormData(e.target),next={...state,overrides:{...(state.overrides||{}),[f.get('date')]:{windows:parseWindows(f.get('windows')),hours:Number(f.get('hours'))}}};validate(next);state=next;save();render();$('status').textContent='單日例外已保存，不影響其他星期。';});
-function download(content,name,type){const url=URL.createObjectURL(new Blob([content],{type})),a=node('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-$('export-ics').onclick=safe(()=>{const p=currentPlan(),blocks=p.days.flatMap(d=>d.blocks);if(!blocks.length)throw Error('尚無可匯出的工作區段');const events=blocks.map(b=>({id:`planner-${b.id}-${b.date}-${b.start}`,title:b.title,date:b.date,start:clock(b.start),end:clock(b.end),notes:state.tasks.find(t=>t.id===b.id)?.outcome||'',source:'College OS 時間規劃'}));download(toICS(events),'時間規劃-'+$('anchor').value+'.ics','text/calendar');$('status').textContent='已匯出目前建議。ICS 是單次匯入，不會持續同步。';});
-</script></body></html>
+
+
+
+
+
+return {minutes:__modules[3].minutes,clock:__modules[3].clock,range:__modules[3].range,shiftPeriod:__modules[3].shiftPeriod,subtract:__modules[3].subtract,mergeIntervals:__modules[3].mergeIntervals,parseWindows:__modules[3].parseWindows,pert:__modules[4].pert,capacity:__modules[7].capacity,plan:__modules[8].plan,validate:__modules[2].validate};
+})();
+__modules[10]=(()=>{
+const {validate}=__modules[2];
+function freshPlanner() {
+  return {
+    version: 1,
+    settings: { limit: 2, buffer: 20, focus: 50, rest: 10, minBlock: 20 },
+    days: Array.from({ length: 7 }, (_, i) => ({
+      windows: [{ start: "18:30", end: "22:15" }],
+      hours: [4, 2, 2, 2, 4, 4, 4][i],
+    })),
+    tasks: [],
+    events: [],
+    goals: [],
+    overrides: {},
+    logs: [],
+    timer: null,
+  };
+}
+function migratePlanner(input) {
+  const value = structuredClone(validate(input));
+  value.goals ??= [];
+  value.overrides ??= {};
+  value.logs ??= [];
+  value.timer ??= null;
+  value.revision ??= 0;
+  value.days = value.days.map((day) => ({
+    hours: day.hours,
+    windows: day.windows ?? [{ start: day.start, end: day.end }],
+  }));
+  return value;
+}
+function createPlannerStore(
+  storage,
+  key = "college-capacity-planner-v1",
+) {
+  let committed = freshPlanner(),
+    loadError = null,
+    blocked = false,
+    lastRaw = null;
+  const undoStack = [],
+    redoStack = [];
+  try {
+    lastRaw = storage.getItem(key);
+    if (lastRaw) committed = migratePlanner(JSON.parse(lastRaw));
+  } catch (e) {
+    loadError = e.message;
+    blocked = true;
+  }
+  function write(candidate, { restore = false, history = true } = {}) {
+    if (blocked && !restore)
+      throw Error("原資料無法讀取，已阻止覆寫；請先匯入有效備份。");
+    const next = migratePlanner(candidate);
+    next.revision = (committed.revision || 0) + 1;
+    const raw = JSON.stringify(next);
+    try {
+      if (storage.getItem(key) !== lastRaw) throw Error("conflict");
+      storage.setItem(key, raw);
+    } catch (e) {
+      if (e.message === "conflict")
+        throw Error("另一個分頁已更新資料；請重新整理後再修改。");
+      throw Error("儲存失敗，原保存資料保留。");
+    }
+    if (history && !committed.timer && !next.timer) {
+      undoStack.push(structuredClone(committed));
+      if (undoStack.length > 20) undoStack.shift();
+      redoStack.length = 0;
+    }
+    // Timing transitions must not be replayed through undo/redo.
+    else if (committed.timer || next.timer) {
+      undoStack.length = 0;
+      redoStack.length = 0;
+    }
+    committed = next;
+    lastRaw = raw;
+    blocked = false;
+    loadError = null;
+    return structuredClone(committed);
+  }
+  return {
+    get error() {
+      return loadError;
+    },
+    get canUndo() {
+      return !committed.timer && undoStack.length > 0;
+    },
+    get canRedo() {
+      return !committed.timer && redoStack.length > 0;
+    },
+    read() {
+      return structuredClone(committed);
+    },
+    commit: write,
+    undo() {
+      if (committed.timer || !undoStack.length)
+        throw Error("目前沒有可復原的修改");
+      const previous = structuredClone(committed),
+        target = undoStack.at(-1),
+        result = write(target, { history: false });
+      undoStack.pop();
+      redoStack.push(previous);
+      return result;
+    },
+    redo() {
+      if (committed.timer || !redoStack.length)
+        throw Error("目前沒有可重做的修改");
+      const previous = structuredClone(committed),
+        target = redoStack.at(-1),
+        result = write(target, { history: false });
+      redoStack.pop();
+      undoStack.push(previous);
+      return result;
+    },
+  };
+}
+
+return {freshPlanner,migratePlanner,createPlannerStore};
+})();
+__modules[11]=(()=>{
+function beginFocus(state, taskId, now) {
+  if (state.timer) throw Error("先完成目前專注或休息。");
+  const task = state.tasks.find((t) => t.id === taskId);
+  if (!task || task.done) throw Error("先選擇未完成的任務");
+  const next = structuredClone(state);
+  next.timer = {
+    mode: "focus",
+    task: taskId,
+    started: now,
+    until: now + state.settings.focus * 60000,
+  };
+  return next;
+}
+function finishFocus(state, now) {
+  if (state.timer?.mode !== "focus") return state;
+  const next = structuredClone(state),
+    timer = state.timer,
+    minutes = Math.max(0, Math.min(now, timer.until) - timer.started) / 60000;
+  next.logs ??= [];
+  next.logs.push({
+    task: timer.task,
+    date: new Date(timer.started).toLocaleDateString("sv-SE", {
+      timeZone: "Asia/Taipei",
+    }),
+    minutes,
+  });
+  const task = next.tasks.find((t) => t.id === timer.task);
+  if (task) task.remaining = Math.max(0, task.remaining - minutes);
+  // Start a full protected rest when returning, even if the tab was suspended.
+  next.timer = { mode: "rest", until: now + state.settings.rest * 60000 };
+  return next;
+}
+function advanceTimer(state, now) {
+  if (!state.timer || now < state.timer.until) return state;
+  if (state.timer.mode === "focus") return finishFocus(state, now);
+  const next = structuredClone(state);
+  next.timer = null;
+  return next;
+}
+
+return {beginFocus,finishFocus,advanceTimer};
+})();
+__modules[12]=(()=>{
+const {clock,range}=__modules[3];
+function renderSchedule(
+  container,
+  result,
+  { period, limit, onFocus, onSelectDate, onEditEvent, eventsOnDate = () => [], displayDates = [] },
+) {
+  const doc = container.ownerDocument;
+  const make = (tag, text, cls) => {
+    const e = doc.createElement(tag);
+    if (text !== undefined) e.textContent = text;
+    if (cls) e.className = cls;
+    return e;
+  };
+  const h = (n) => (n / 60).toFixed(1) + "h";
+  function dayCard(day) {
+    const article = make("article", undefined, day.past ? "day past-day" : "day");
+    const heading = make("h3");
+    if (onSelectDate && period === "week") {
+      const dateButton = make("button", day.date, "calendar-date");
+      dateButton.type = "button";
+      dateButton.setAttribute("aria-label", `查看 ${day.date} 日程`);
+      dateButton.onclick = () => onSelectDate(day.date);
+      heading.append(dateButton);
+    } else heading.textContent = day.date;
+    article.append(heading);
+    article.append(
+      make(
+        "p",
+        day.past
+          ? "已過日期；只顯示固定行程"
+          : `已排 ${h(day.used)} / 可排 ${h(day.budget)} · ${day.ids.size}/${limit} 件`,
+      ),
+    );
+    const fixed = eventsOnDate(day.date);
+    for (const event of fixed) {
+      const row = make("div", undefined, "block fixed-event");
+      const label = `${event.start}–${event.end}　${event.title}`;
+      if (onEditEvent) {
+        const editButton = make("button", label, "event-open");
+        editButton.type = "button";
+        editButton.setAttribute("aria-label", `編輯行程：${event.title}`);
+        editButton.onclick = () => onEditEvent(event);
+        row.append(editButton);
+      } else row.append(make("span", label));
+      article.append(row);
+    }
+    for (const block of day.blocks) {
+      const row = make("div", undefined, "block");
+      row.append(
+        make(
+          "span",
+          `${clock(block.start)}–${clock(block.end)}　${block.title}`,
+        ),
+      );
+      const b = make("button", "開始");
+      b.type = "button";
+      b.onclick = () => onFocus(block.id);
+      row.append(b);
+      article.append(row);
+    }
+    if (!day.blocks.length && !fixed.length) article.append(make("p", "留白日程"));
+    return article;
+  }
+  container.replaceChildren();
+  container.classList.toggle("week-grid", period === "week");
+  if (!result.days.length && !(["day", "week"].includes(period) && displayDates.length)) {
+    container.append(make("p", "所選週期已結束，請切換日期。"));
+    return;
+  }
+  if (period === "day" || period === "week") {
+    const days =
+      displayDates.length
+        ? displayDates.map((date) =>
+            result.days.find((day) => day.date === date) || {
+              date,
+              used: 0,
+              budget: 0,
+              ids: new Set(),
+              blocks: [],
+              past: true,
+            },
+          )
+        : result.days;
+    for (const day of days) {
+      const panel = dayCard(day);
+      panel.classList.add("panel");
+      if (period === "day") panel.classList.add("single-day");
+      container.append(panel);
+    }
+    return;
+  }
+  const weeks = new Map();
+  for (const day of result.days) {
+    const key = range(day.date, "week")[0];
+    if (!weeks.has(key)) weeks.set(key, []);
+    weeks.get(key).push(day);
+  }
+  let first = true;
+  for (const days of weeks.values()) {
+    const details = make("details", undefined, "panel schedule-week"),
+      used = days.reduce((n, d) => n + d.used, 0),
+      budget = days.reduce((n, d) => n + d.budget, 0);
+    details.append(
+      make(
+        "summary",
+        `${days[0].date} ～ ${days.at(-1).date}　已排 ${h(used)} / 可排 ${h(budget)}`,
+      ),
+    );
+    if (first && used > 0) details.open = true;
+    first = false;
+    let drawn = false;
+    details.addEventListener("toggle", () => {
+      if (details.open && !drawn) {
+        for (const day of days) details.append(dayCard(day));
+        drawn = true;
+      }
+    });
+    if (details.open) {
+      for (const day of days) details.append(dayCard(day));
+      drawn = true;
+    }
+    container.append(details);
+  }
+}
+
+return {renderSchedule};
+})();
+__modules[13]=(()=>{
+const {parseSchedule}=__modules[6];
+
+// Merge calendar events without deleting either store. The main calendar wins
+// ID conflicts; the planner can safely add events without replacing user data.
+function mergeCalendarEvents(canonical, planner) {
+  const normalizedCanonical = canonical.map((event) =>
+    event?.status === "personal" ? { ...event, status: "confirmed" } : event,
+  );
+  const parsedPrimary = parseSchedule(JSON.stringify({ events: normalizedCanonical })).events;
+  const primary = canonical.map((event) => structuredClone(event));
+  const local = parseSchedule(JSON.stringify({ events: planner })).events;
+  const merged = new Map(primary.map((event) => [event.id, event]));
+  let added = 0, conflicts = 0;
+  for (const event of local) {
+    const existing = merged.get(event.id);
+    if (!existing) {
+      merged.set(event.id, event);
+      added++;
+    } else {
+      const parsedExisting = parsedPrimary.find((item) => item.id === event.id);
+      if (JSON.stringify(parsedExisting) !== JSON.stringify(event)) conflicts++;
+    }
+  }
+  const events = [...merged.values()];
+  parseSchedule(JSON.stringify({ events: events.map((event) =>
+    event?.status === "personal" ? { ...event, status: "confirmed" } : event,
+  ) }));
+  return {
+    events,
+    added,
+    conflicts,
+  };
+}
+
+return {mergeCalendarEvents};
+})();
+__modules[14]=(()=>{
+const {mountLifestyle}=__modules[1];
+const {plan,range,shiftPeriod,clock,pert,validate,parseWindows}=__modules[9];
+const {parseSchedule,toICS,eventsOn}=__modules[6];
+const {createPlannerStore}=__modules[10];
+const {beginFocus,finishFocus,advanceTimer}=__modules[11];
+const {renderSchedule}=__modules[12];
+const {mergeCalendarEvents}=__modules[13];
+const $ = (id) => document.getElementById(id),
+  key = "college-capacity-planner-v1",
+  today = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" }),
+  weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+const store = createPlannerStore(localStorage, key);
+let editing = null,
+  editingEvent = null,
+  revision = 0;
+let state = store.read();
+if (store.error) $("status").textContent = "原資料未覆寫：" + store.error;
+let planCache = null;
+let lifestyleView = null;
+function nowCutoff() {
+  const d = new Date();
+  return {
+    date: d.toLocaleDateString("sv-SE", { timeZone: "Asia/Taipei" }),
+    minute:
+      Number(
+        d
+          .toLocaleTimeString("en-GB", {
+            timeZone: "Asia/Taipei",
+            hour12: false,
+          })
+          .slice(0, 2),
+      ) *
+        60 +
+      Number(
+        d
+          .toLocaleTimeString("en-GB", {
+            timeZone: "Asia/Taipei",
+            hour12: false,
+          })
+          .slice(3, 5),
+      ),
+  };
+}
+function currentPlan() {
+  const now = nowCutoff(),
+    dates = range($("anchor").value || today, $("period").value).filter(
+      (d) => d >= now.date,
+    ),
+    key = JSON.stringify([
+      dates,
+      now,
+      state.settings,
+      state.days,
+      state.overrides,
+      state.events,
+      state.tasks,
+    ]);
+  if (planCache?.key === key) return planCache.value;
+  const value = plan(state, dates, now);
+  planCache = { key, value };
+  return value;
+}
+function save(options) {
+  state = store.commit(state, options);
+  revision = state.revision;
+}
+function safe(fn) {
+  return (...args) => {
+    try {
+      $("status").textContent = "";
+      fn(...args);
+    } catch (e) {
+      state = store.read();
+      revision = state.revision || 0;
+      render();
+      $("status").textContent = e.message;
+    }
+  };
+}
+function node(tag, text, cls) {
+  const n = document.createElement(tag);
+  if (text !== undefined) n.textContent = text;
+  if (cls) n.className = cls;
+  return n;
+}
+function btn(text, fn) {
+  const b = node("button", text);
+  b.type = "button";
+  b.onclick = safe(fn);
+  return b;
+}
+const hours = (n) => (n / 60).toFixed(1) + " 小時";
+revision = state.revision || 0;
+const initial = new Date(today + "T12:00:00Z");
+if (initial.getUTCDay() === 0) initial.setUTCDate(initial.getUTCDate() + 1);
+$("anchor").value = initial.toISOString().slice(0, 10);
+document.querySelector("[name=date]").value = today;
+resetEventEditor();
+for (const b of document.querySelectorAll("[data-tab]"))
+  b.onclick = () =>
+    $(b.dataset.tab).scrollIntoView?.({ behavior: "smooth", block: "start" });
+function render() {
+  lifestyleView?.render();
+  const confirmed = state.confirmed;
+  $("confirmed-note").textContent = confirmed
+    ? `確認於 ${confirmed.at}。${confirmed.revision === revision ? "設定與任務未變更。" : "資料已變更，請重新檢查建議排程；原確認紀錄保留。"}`
+    : "尚未確認排程。";
+  $("confirmed").replaceChildren();
+  if (confirmed)
+    for (const b of confirmed.blocks)
+      $("confirmed").append(
+        node(
+          "div",
+          `${b.date} ${clock(b.start)}–${clock(b.end)} ${b.title}`,
+          "block",
+        ),
+      );
+  const dates = range($("anchor").value || today, $("period").value),
+    p = currentPlan();
+  $("range").textContent =
+    `${dates[0]} ～ ${dates.at(-1)} · 僅安排今天起的時段；月／季為容量預估`;
+  $("metrics").replaceChildren();
+  for (const [label, value] of [
+    ["可承諾容量", hours(p.capacity)],
+    ["工作需求", hours(p.demand)],
+    ["建議已排", hours(p.scheduled)],
+    [
+      "容量利用率",
+      p.capacity
+        ? ((100 * p.demand) / p.capacity).toFixed(0) + "%"
+        : "無可排時間",
+    ],
+  ]) {
+    const x = node("article", undefined, "metric");
+    x.append(node("span", label), node("strong", value));
+    $("metrics").append(x);
+  }
+  $("warnings").replaceChildren();
+  if (!p.unplaced.length)
+    $("warnings").append(
+      node(
+        "p",
+        state.tasks.some((t) => t.active && !t.done)
+          ? "目前選取工作可排入。"
+          : "先加入工作與確認可用時段，再計算。",
+      ),
+    );
+  for (const t of p.verification || [])
+    $("warnings").append(
+      node("div", `${t.title}：估時歸零，請核對完成條件。`, "warning"),
+    );
+  for (const t of p.unplaced)
+    $("warnings").append(
+      node(
+        "div",
+        `${t.title} · 缺 ${hours(t.missing)} · ${t.deadline || "期限待確認"} · ${t.reason || "可用時間不足"}`,
+        "warning",
+      ),
+    );
+  renderSchedule($("schedule"), p, {
+    period: $("period").value,
+    limit: state.settings.limit,
+    displayDates: ["day", "week"].includes($("period").value) ? dates : [],
+    onSelectDate: safe((date) => {
+      $("anchor").value = date;
+      $("period").value = "day";
+      render();
+    }),
+    onEditEvent: safe((event) => beginEventEdit(event._seriesId || event.id)),
+    eventsOnDate: (date) => eventsOn(state.events, date),
+    onFocus: (id) => {
+      $("focus-task").value = id;
+      $("start").onclick();
+      $("timer").scrollIntoView?.({ behavior: "smooth" });
+    },
+  });
+  $("undo").disabled = !store.canUndo;
+  $("redo").disabled = !store.canRedo;
+  renderGoals();
+  $("task-list").replaceChildren();
+  const selectedDependency = $("depends").value;
+  $("depends").replaceChildren(new Option("無前置任務", ""));
+  const selected = $("focus-task").value;
+  $("focus-task").replaceChildren(new Option("選擇要記錄的工作", ""));
+  for (const t of state.tasks) {
+    if (t.id !== editing) $("depends").add(new Option(t.title, t.id));
+    if (!t.done) $("focus-task").add(new Option(t.title, t.id));
+    const x = node("article", undefined, "panel task"),
+      content = node("div", undefined, "content");
+    content.append(
+      node("h3", t.title),
+      node(
+        "p",
+        `剩餘 ${hours(t.remaining)} · ${t.deadline || "期限待確認"} · ${t.done ? "已完成" : t.active ? "參與排程" : "暫存"}`,
+      ),
+      node("p", t.outcome || "完成條件待補充"),
+    );
+    x.append(
+      content,
+      btn("編輯工作", () => {
+        editing = t.id;
+        render();
+        const f = $("task-form");
+        for (const k of [
+          "title",
+          "deadline",
+          "priority",
+          "outcome",
+          "depends",
+          "goal",
+          "category",
+        ])
+          f.elements[k].value = t[k] || (k === "category" ? "study" : "");
+        f.elements.hours.value = t.remaining / 60;
+        f.elements.active.checked = t.active;
+        $("task-submit").textContent = "保存修改";
+        $("cancel-edit").hidden = false;
+        f.scrollIntoView({ behavior: "smooth" });
+      }),
+      btn(t.active ? "暫停推進" : "開始推進", () => {
+        const current = state.tasks.find((x) => x.id === t.id);
+        current.active = !current.active;
+        save();
+        render();
+      }),
+      btn(t.done ? "重新開啟" : "確認完成", () => {
+        if (state.timer?.task === t.id) throw Error("請先結束這件工作的計時");
+        const current = state.tasks.find((x) => x.id === t.id);
+        current.done = !current.done;
+        save();
+        render();
+      }),
+      btn("刪除", () => {
+        if (state.timer?.task === t.id) throw Error("請先結束這件工作的計時");
+        if (!confirm("刪除此工作？")) return;
+        if (state.tasks.some((x) => x.depends === t.id))
+          throw Error("其他工作依賴此任務，請先移除依賴");
+        state.tasks = state.tasks.filter((x) => x.id !== t.id);
+        if (editing === t.id) {
+          editing = null;
+          $("task-form").reset();
+          $("task-submit").textContent = "加入工作";
+          $("cancel-edit").hidden = true;
+        }
+        save();
+        render();
+      }),
+    );
+    $("task-list").append(x);
+  }
+  if (state.tasks.some((t) => t.id === selectedDependency && t.id !== editing))
+    $("depends").value = selectedDependency;
+  if (state.tasks.some((t) => t.id === selected))
+    $("focus-task").value = selected;
+  $("events").replaceChildren();
+  if (editingEvent && !state.events.some((event) => event.id === editingEvent))
+    resetEventEditor();
+  for (const e of state.events) {
+    const row = node("div", undefined, "block");
+    row.append(
+      node(
+        "p",
+        `${e.title} · ${e.date || "每週" + weekdays[e.weekday]} ${e.start}–${e.end}`,
+      ),
+      btn("編輯事件", () => beginEventEdit(e.id)),
+      btn("移除事件", () => {
+        state.events = state.events.filter((x) => x.id !== e.id);
+        save();
+        if (editingEvent === e.id) resetEventEditor();
+        render();
+      }),
+    );
+    $("events").append(row);
+  }
+}
+$("task-form").onsubmit = safe((e) => {
+  e.preventDefault();
+  if (editing && state.timer?.task === editing)
+    throw Error("請先結束計時再修改估時");
+  const f = new FormData(e.target);
+  const item = {
+    id: editing || crypto.randomUUID(),
+    title: f.get("title").trim(),
+    remaining: Number(f.get("hours")) * 60,
+    deadline: f.get("deadline"),
+    priority: Number(f.get("priority")),
+    outcome: f.get("outcome"),
+    goal: f.get("goal"),
+    depends: f.get("depends"),
+    category: f.get("category") || "study",
+    active: f.has("active"),
+    done: editing ? state.tasks.find((t) => t.id === editing).done : false,
+  };
+  const next = {
+    ...state,
+    tasks: editing
+      ? state.tasks.map((t) => (t.id === editing ? item : t))
+      : [...state.tasks, item],
+  };
+  validate(next);
+  state = next;
+  save();
+  editing = null;
+  e.target.reset();
+  $("task-submit").textContent = "加入工作";
+  $("cancel-edit").hidden = true;
+  render();
+});
+$("days").replaceChildren();
+state.days.forEach((d, i) => {
+  const x = node("div", undefined, "form-grid");
+  x.append(node("strong", "週" + weekdays[i]));
+  const l = node("label", "可用時段（可多段；空白不排）"),
+    input = node("input");
+  input.name = `day-${i}-windows`;
+  input.value = (d.windows ?? [{ start: d.start, end: d.end }])
+    .map((w) => w.start + "-" + w.end)
+    .join(",");
+  input.placeholder = "08:00-10:00,18:30-22:15";
+  l.append(input);
+  x.append(l);
+  const h = node("label", "每日淨工時上限"),
+    n = node("input");
+  n.name = `day-${i}-hours`;
+  n.type = "number";
+  n.value = d.hours;
+  n.min = 0;
+  n.max = 24;
+  n.step = 0.25;
+  n.required = true;
+  h.append(n);
+  x.append(h);
+  $("days").append(x);
+});
+for (const k of ["limit", "buffer", "focus", "rest", "minBlock"])
+  document.querySelector(`[name=${k}]`).value = state.settings[k];
+$("settings-form").onsubmit = safe((e) => {
+  e.preventDefault();
+  const next = structuredClone(state),
+    f = new FormData(e.target);
+  for (const k of ["limit", "buffer", "focus", "rest", "minBlock"])
+    next.settings[k] = Number(f.get(k));
+  next.days.forEach((d, i) => {
+    d.windows = parseWindows(f.get(`day-${i}-windows`));
+    d.hours = Number(f.get(`day-${i}-hours`));
+  });
+  validate(next);
+  state = next;
+  save();
+  render();
+  $("status").textContent = "已保存。建議排程已重新計算。";
+});
+function resetEventEditor() {
+  editingEvent = null;
+  const form = $("event-form");
+  for (const field of ["title", "start", "end"]) form.elements[field].value = "";
+  form.elements.date.value = $("anchor").value || today;
+  form.elements.date.readOnly = false;
+  form.elements.repeat.checked = false;
+  form.elements.repeat.disabled = false;
+  $("event-submit").textContent = "加入固定事件";
+  $("event-cancel-edit").hidden = true;
+  $("event-edit-note").hidden = true;
+  $("event-edit-note").textContent = "";
+}
+function beginEventEdit(id) {
+  const event = state.events.find((item) => item.id === id);
+  if (!event) throw Error("行程已不存在，請重新選取。");
+  const form = $("event-form"), series = event.weekday !== undefined;
+  if (editingEvent === id) {
+    form.scrollIntoView?.({ behavior: "smooth", block: "center" });
+    form.elements.title.focus?.();
+    return;
+  }
+  const current = state.events.find((item) => item.id === editingEvent);
+  const dirty = current
+    ? ["title", "start", "end"].some((field) => form.elements[field].value !== current[field]) ||
+      form.elements.date.value !== (current.date || current.from) ||
+      form.elements.repeat.checked !== (current.weekday !== undefined)
+    : ["title", "start", "end"].some((field) => form.elements[field].value.trim());
+  if (dirty && !confirm("切換行程會放棄目前未保存的內容，確定繼續？")) return;
+  editingEvent = id;
+  for (const field of ["title", "start", "end"]) form.elements[field].value = event[field];
+  form.elements.date.value = series ? event.from : event.date;
+  form.elements.date.readOnly = series;
+  form.elements.repeat.checked = series;
+  form.elements.repeat.disabled = series;
+  $("event-submit").textContent = "保存行程修改";
+  $("event-cancel-edit").hidden = false;
+  $("event-edit-note").hidden = false;
+  $("event-edit-note").textContent = series
+    ? `編輯整個每週系列（${event.from} ～ ${event.until}）；保留重複規則與單次例外。`
+    : "修改這一筆行程；原分類、備註與關聯資料會保留。";
+  form.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  form.elements.title.focus?.();
+}
+$("event-cancel-edit").onclick = resetEventEditor;
+$("event-form").onsubmit = safe((e) => {
+  e.preventDefault();
+  const previous = editingEvent ? state.events.find((item) => item.id === editingEvent) : null;
+  if (editingEvent && !previous) throw Error("行程已不存在，請取消編輯後重新加入。");
+  const f = new FormData(e.target),
+    date = f.get("date"),
+    item = {
+      ...previous,
+      id: previous?.id || crypto.randomUUID(),
+      title: f.get("title").trim(),
+      start: f.get("start"),
+      end: f.get("end"),
+    };
+  if (item.end <= item.start)
+    throw Error("結束需晚於開始；跨午夜請拆成兩個事件");
+  if (previous?.weekday === undefined) item.date = date;
+  if (previous?.weekday === undefined && f.has("repeat")) {
+    item.weekday = new Date(date + "T12:00:00Z").getUTCDay();
+    item.from = date;
+    item.until = range(date, "quarter").at(-1);
+    delete item.date;
+  }
+  const next = {
+    ...state,
+    events: previous
+      ? state.events.map((event) => event.id === previous.id ? item : event)
+      : [...state.events, item],
+  };
+  validate(next);
+  state = next;
+  save();
+  resetEventEditor();
+  render();
+  $("status").textContent = previous ? "行程已修改，容量已重新計算。" : "已加入固定行程。";
+});
+for (const id of ["period", "anchor"]) $(id).onchange = safe(render);
+$("previous-period").onclick = safe(() => {
+  $("anchor").value = shiftPeriod(
+    $("anchor").value || today,
+    $("period").value,
+    -1,
+  );
+  render();
+});
+$("next-period").onclick = safe(() => {
+  $("anchor").value = shiftPeriod(
+    $("anchor").value || today,
+    $("period").value,
+    1,
+  );
+  render();
+});
+$("go-today").onclick = safe(() => {
+  $("anchor").value = today;
+  render();
+});
+$("replan").onclick = safe(render);
+$("print").onclick = () => {
+  document.body.classList.toggle(
+    "print-schedule",
+    $("print-scope").value === "schedule",
+  );
+  const snapshot = [...document.querySelectorAll("details")].map((d) => [
+    d,
+    d.open,
+  ]);
+  const cleanup = () => {
+    document.body.classList.remove("print-schedule");
+    for (const [d, open] of snapshot) d.open = open;
+    window.removeEventListener?.("afterprint", cleanup);
+  };
+  window.addEventListener?.("afterprint", cleanup, { once: true });
+  try {
+    for (const [d] of snapshot) {
+      d.open = true;
+      d.dispatchEvent(new Event("toggle"));
+    }
+    window.print();
+  } catch (error) {
+    cleanup();
+    $("status").textContent = error.message;
+  }
+};
+$("backup").onclick = safe(() => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {
+      type: "application/json",
+    }),
+    u = URL.createObjectURL(blob),
+    a = node("a");
+  a.href = u;
+  a.download = `時間規劃備份-${today}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(u), 1000);
+});
+$("restore").onchange = async (e) => {
+  try {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 2e6) throw Error("檔案不可超過2MB");
+    const next = validate(JSON.parse(await f.text()));
+    if (!confirm("以備份取代目前規劃？建議先匯出目前資料。")) return;
+    if (state.timer) throw Error("請先結束目前計時再匯入備份");
+    state = next;
+    save({ restore: true });
+    location.reload();
+  } catch (err) {
+    state = store.read();
+    render();
+    $("status").textContent = err.message;
+  } finally {
+    e.target.value = "";
+  }
+};
+$("calculate").onclick = safe(() => {
+  const [a, b, c] = ["a", "b", "c"].map((id) => Number($(id).value));
+  if (![a, b, c].every(Number.isFinite) || [a, b, c].some((x) => x < 0))
+    throw Error("請輸入非負數字");
+  const type = $("calc-type").value;
+  let result;
+  if (type === "pert")
+    result = `( ${a} + 4 × ${b} + ${c} ) ÷ 6 = ${pert(a, b, c).toFixed(2)} 小時`;
+  if (type === "video") {
+    if (b <= 0) throw Error("倍速需大於零");
+    result = `${a} ÷ ${b} + ${c} = ${(a / b + c).toFixed(1)} 分鐘`;
+  }
+  if (type === "quiz")
+    result = `${a} × ${b} + ${c} = ${(a * b + c).toFixed(1)} 分鐘`;
+  if (type === "saving")
+    result = `${a} × ${b} − ${c} = ${(a * b - c).toFixed(1)} 分鐘淨節省`;
+  $("calc-result").textContent = result;
+});
+function tick() {
+  const next = advanceTimer(state, Date.now());
+  if (next !== state) {
+    try {
+      state = next;
+      save();
+      render();
+    } catch (e) {
+      state = store.read();
+      $("status").textContent = e.message;
+    }
+  }
+  const current = state.timer;
+  $("start").disabled = !!current;
+  $("stop").disabled = !current || current.mode === "rest";
+  const seconds = current
+    ? Math.max(0, Math.ceil((current.until - Date.now()) / 1000))
+    : 0;
+  $("timer").textContent = current
+    ? `${current.mode === "focus" ? "專注" : "休息"} ${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`
+    : "準備開始";
+}
+$("start").onclick = safe(() => {
+  if (state.timer) return;
+  state = beginFocus(state, $("focus-task").value, Date.now());
+  save();
+  render();
+  tick();
+});
+$("stop").onclick = safe(() => {
+  if (state.timer?.mode !== "focus") return;
+  state = finishFocus(state, Date.now());
+  save();
+  render();
+  tick();
+});
+render();
+tick();
+setInterval(tick, 1000);
+
+$("cancel-edit").onclick = () => {
+  editing = null;
+  $("task-form").reset();
+  $("task-submit").textContent = "加入工作";
+  $("cancel-edit").hidden = true;
+  render();
+};
+$("import-existing").onclick = safe(() => {
+  const raw = localStorage.getItem("college-os-v1");
+  let old = {};
+  if (raw) {
+    try { old = JSON.parse(raw); }
+    catch { throw Error("主日曆資料無法解析；未修改任何資料。"); }
+    if (
+      !old ||
+      typeof old !== "object" ||
+      Array.isArray(old) ||
+      !Array.isArray(old.events ?? [])
+    )
+      throw Error("主日曆資料格式不正確；未修改任何資料。");
+  }
+  const result = mergeCalendarEvents(old.events || [], state.events);
+  const normalized = parseSchedule(JSON.stringify({
+    events: result.events.map((e) =>
+      e.status === "personal" ? { ...e, status: "confirmed" } : e,
+    ),
+  })).events;
+  const events = normalized.filter(
+    (e) => e.category !== "study" && e.start && e.end,
+  );
+  const next = { ...state, events };
+  validate(next);
+  // Calendar sync is additive. Keep every unrelated main-app field intact.
+  localStorage.setItem(
+    "college-os-v1",
+    JSON.stringify({ ...old, events: result.events }),
+  );
+  state = next;
+  save();
+  render();
+  $("status").textContent = `日曆已合併：新增 ${result.added} 個事件，${result.conflicts} 個同 ID 衝突保留主日曆版本。`;
+});
+$("confirm-plan").onclick = safe(() => {
+  const p = currentPlan();
+  state.confirmed = {
+    at: new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei" }),
+    revision: revision + 1,
+    blocks: p.days.flatMap((d) => d.blocks),
+  };
+  save();
+  render();
+  $("status").textContent =
+    `已保存排程快照。${p.unplaced.length} 件工作仍有未排入時間，保留在缺口清單。`;
+});
+
+function renderGoals() {
+  const old = $("task-goal").value;
+  $("task-goal").replaceChildren(new Option("未指定目標", ""));
+  $("goal-list").replaceChildren();
+  for (const g of state.goals || []) {
+    $("task-goal").add(new Option(g.title, g.id));
+    const tasks = state.tasks.filter((t) => t.goal === g.id),
+      done = tasks.filter((t) => t.done).length,
+      x = node("article", undefined, "panel");
+    x.append(
+      node("h3", g.title),
+      node(
+        "p",
+        `${g.period === "month" ? "月" : "季"}目標 · ${g.date} · 完成 ${done}/${tasks.length} 件${tasks.length ? "（" + Math.round((done / tasks.length) * 100) + "%）" : ""} · 剩餘 ${hours(tasks.filter((t) => !t.done).reduce((n, t) => n + t.remaining, 0))}`,
+      ),
+      btn("刪除目標", () => {
+        if (!confirm("刪除目標？其任務會保留。")) return;
+        state.goals = state.goals.filter((x) => x.id !== g.id);
+        state.tasks.forEach((t) => {
+          if (t.goal === g.id) t.goal = "";
+        });
+        save();
+        render();
+      }),
+    );
+    $("goal-list").append(x);
+  }
+  if ((state.goals || []).some((g) => g.id === old)) $("task-goal").value = old;
+  $("overrides").replaceChildren();
+  for (const [date, d] of Object.entries(state.overrides || {}).sort())
+    $("overrides").append(
+      node(
+        "p",
+        `${date} · ${d.windows.map((w) => w.start + "–" + w.end).join("、") || "不排工作"} · 上限 ${d.hours} 小時`,
+      ),
+      btn("恢復每週設定", () => {
+        delete state.overrides[date];
+        save();
+        render();
+      }),
+    );
+  const logs = state.logs || [];
+  $("log-summary").textContent =
+    `累計 ${logs.length} 段，實際投入 ${hours(logs.reduce((n, l) => n + l.minutes, 0))}。以下顯示最近20段。`;
+  $("log-list").replaceChildren();
+  for (const l of logs.slice(-20).reverse())
+    $("log-list").append(
+      node(
+        "p",
+        `${l.date} · ${state.tasks.find((t) => t.id === l.task)?.title || "已刪除工作"} · ${l.minutes.toFixed(1)} 分鐘`,
+      ),
+    );
+}
+$("goal-form").elements.date.value = today;
+$("override-form").elements.date.value = today;
+$("goal-form").onsubmit = safe((e) => {
+  e.preventDefault();
+  const f = new FormData(e.target),
+    next = {
+      ...state,
+      goals: [
+        ...(state.goals || []),
+        {
+          id: crypto.randomUUID(),
+          title: f.get("title").trim(),
+          date: f.get("date"),
+          period: f.get("period"),
+        },
+      ],
+    };
+  validate(next);
+  state = next;
+  save();
+  render();
+  e.target.reset();
+  e.target.elements.date.value = today;
+});
+$("override-form").onsubmit = safe((e) => {
+  e.preventDefault();
+  const f = new FormData(e.target),
+    next = {
+      ...state,
+      overrides: {
+        ...(state.overrides || {}),
+        [f.get("date")]: {
+          windows: parseWindows(f.get("windows")),
+          hours: Number(f.get("hours")),
+        },
+      },
+    };
+  validate(next);
+  state = next;
+  save();
+  render();
+  $("status").textContent = "單日例外已保存，不影響其他星期。";
+});
+function download(content, name, type) {
+  const url = URL.createObjectURL(new Blob([content], { type })),
+    a = node("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$("export-ics").onclick = safe(() => {
+  const dates = range($("anchor").value || today, $("period").value),
+    blocks =
+      $("export-plan-source").value === "confirmed"
+        ? (state.confirmed?.blocks || []).filter((b) => dates.includes(b.date))
+        : currentPlan().days.flatMap((d) => d.blocks);
+  if ($("export-plan-source").value === "confirmed" && !state.confirmed)
+    throw Error("尚無確認快照");
+  const events = blocks.map((b) => ({
+    id: `planner-${b.id}-${b.date}-${b.start}`,
+    title: b.title,
+    date: b.date,
+    start: clock(b.start),
+    end: clock(b.end),
+    notes: state.tasks.find((t) => t.id === b.id)?.outcome || "",
+    source: "College OS 時間規劃",
+  }));
+  if ($("export-fixed").checked)
+    for (const date of dates)
+      for (const event of eventsOn(state.events, date))
+        events.push({ ...event, date });
+  if (!events.length) throw Error("所選範圍沒有可匯出行程");
+  download(
+    toICS(
+      events.map(
+        ({ weekday, from, until, excludedDates, overrides, ...event }) => event,
+      ),
+    ),
+    "時間規劃-" + $("anchor").value + ".ics",
+    "text/calendar",
+  );
+  $("status").textContent = "已匯出所選版本。ICS 是單次匯入，不會持續同步。";
+});
+
+$("undo").onclick = safe(() => {
+  state = store.undo();
+  revision = state.revision;
+  syncSettings();
+  render();
+  tick();
+  $("status").textContent = "已復原上一項修改。";
+});
+$("redo").onclick = safe(() => {
+  state = store.redo();
+  revision = state.revision;
+  syncSettings();
+  render();
+  tick();
+  $("status").textContent = "已重做。";
+});
+const calculatorLabels = {
+  pert: ["樂觀時間（小時）", "最可能時間（小時）", "悲觀時間（小時）"],
+  video: ["影片長度（分鐘）", "播放倍速", "理解與練習（分鐘）"],
+  quiz: ["題數", "每題作答（分鐘）", "訂正總時間（分鐘）"],
+  saving: ["使用次數", "每次節省（分鐘）", "建置與維護（分鐘）"],
+};
+$("calc-type").onchange = () => {
+  calculatorLabels[$("calc-type").value].forEach(
+    (text, i) =>
+      ($("calc-" + ["a", "b", "c"][i] + "-label").textContent = text),
+  );
+  $("calc-result").textContent = "";
+};
+
+function syncSettings() {
+  state.days.forEach((d, i) => {
+    document.querySelector(`[name="day-${i}-windows"]`).value = d.windows
+      .map((w) => w.start + "-" + w.end)
+      .join(",");
+    document.querySelector(`[name="day-${i}-hours"]`).value = d.hours;
+  });
+  for (const k of ["limit", "buffer", "focus", "rest", "minBlock"])
+    document.querySelector(`[name=${k}]`).value = state.settings[k];
+}
+
+lifestyleView = mountLifestyle({
+  getState: () => state,
+  commit: (next) => {
+    state = store.commit(next);
+    revision = state.revision;
+    render();
+  },
+  getPlan: currentPlan,
+  getDates: () => range($("anchor").value || today, $("period").value),
+});
+
+return {};
+})();</script>
+  </body>
+</html>

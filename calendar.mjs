@@ -1,30 +1,99 @@
-export function weekDates(date){const d=new Date(date+'T12:00:00Z');const offset=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-offset);return Array.from({length:7},(_,i)=>{const day=new Date(d);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);});}
-export function eventsOn(events,date){const weekday=new Date(date+'T12:00:00Z').getUTCDay();return events.flatMap(event=>{
- if(event.date===date)return [event];
- if(event.weekday!==weekday||date<event.from||date>event.until||(event.excludedDates??[]).includes(date))return [];
- const override=event.overrides?.[date]??{};
- return [{...event,...override,id:`${event.id}@${date}`,_seriesId:event.id,_occurrenceDate:date}];
-}).sort((a,b)=>(a.start??'').localeCompare(b.start??''));}
-export function workloadByDay(events,dates){const categories=['course','study','rest','deadline','personal'];return dates.map(date=>{const minutes=Object.fromEntries(categories.map(category=>[category,0]));for(const event of eventsOn(events,date)){if(!event.start||!event.end)continue;const toMinutes=value=>Number(value.slice(0,2))*60+Number(value.slice(3));const duration=Math.max(0,toMinutes(event.end)-toMinutes(event.start));const category=categories.includes(event.category)?event.category:'personal';minutes[category]+=duration;}return {date,minutes,total:Object.values(minutes).reduce((sum,value)=>sum+value,0)};});}
-export function excludeOccurrence(events,seriesId,date){return events.map(event=>event.id===seriesId&&event.weekday!==undefined?{...event,excludedDates:[...new Set([...(event.excludedDates??[]),date])].sort()}:event);}
-export function detachOccurrence(events,seriesId,date,changes){const series=events.find(event=>event.id===seriesId&&event.weekday!==undefined);if(!series)throw new Error('找不到要修改的週期行程。');const updated=excludeOccurrence(events,seriesId,date);return [...updated,{...series,...changes,id:crypto.randomUUID(),date,weekday:undefined,from:undefined,until:undefined,excludedDates:undefined,overrides:undefined}];}
-export function conflicts(events){const timed=events.filter(e=>e.start&&e.end),result=[];for(let i=0;i<timed.length;i++)for(let j=i+1;j<timed.length;j++)if(timed[i].start<timed[j].end&&timed[j].start<timed[i].end)result.push([timed[i].id,timed[j].id]);return result;}
+import {eventDetails,OVERRIDE_FIELDS} from './calendar-schema.mjs';
+const isRecord = value => !!value && typeof value === 'object' && !Array.isArray(value);
+const isDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+const isTime = value => typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+export function weekDates(date){if(!isDate(date))throw Error('日期格式不正確。');const d=new Date(date+'T12:00:00Z');const offset=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-offset);return Array.from({length:7},(_,i)=>{const day=new Date(d);day.setUTCDate(day.getUTCDate()+i);return day.toISOString().slice(0,10);});}
+export function eventsOn(events,date){if(!Array.isArray(events)||!isDate(date))throw Error('行程或日期格式不正確。');const weekday=new Date(date+'T12:00:00Z').getUTCDay();return events.flatMap(event=>{if(!isRecord(event))throw Error('行程格式不正確。');if(event.date===date)return [event];if(event.weekday!==weekday||date<event.from||date>event.until||(event.excludedDates??[]).includes(date))return [];const override=event.overrides?.[date]??{};return [{...event,...override,id:`${event.id}@${date}`,_seriesId:event.id,_occurrenceDate:date}];}).sort((a,b)=>(a.start??'').localeCompare(b.start??''));}
+export function workloadByDay(events,dates){if(!Array.isArray(dates)||dates.some(d=>!isDate(d)))throw Error('統計日期不正確。');const categories=['course','study','rest','deadline','personal'];return dates.map(date=>{const minutes=Object.fromEntries(categories.map(category=>[category,0]));for(const event of eventsOn(events,date)){if(event.status==='cancelled'||(!event.start&&!event.end))continue;if(!isTime(event.start)||!isTime(event.end)||event.end<=event.start)throw Error('行程時間不完整，無法計算時數。');const toMinutes=value=>Number(value.slice(0,2))*60+Number(value.slice(3));const duration=toMinutes(event.end)-toMinutes(event.start);const category=categories.includes(event.category)?event.category:'personal';minutes[category]+=duration;}return {date,minutes,total:Object.values(minutes).reduce((sum,value)=>sum+value,0)};});}
+export function excludeOccurrence(events,seriesId,date){if(!Array.isArray(events)||!isDate(date))throw Error('例外日期不正確。');const series=events.find(e=>e.id===seriesId&&e.weekday!==undefined);if(!series||date<series.from||date>series.until||new Date(date+'T12:00:00Z').getUTCDay()!==series.weekday)throw Error('例外日期不屬於此週期行程。');return events.map(event=>event.id===seriesId?{...event,excludedDates:[...new Set([...(event.excludedDates??[]),date])].sort()}:event);}
+export function detachOccurrence(events,seriesId,date,changes){const series=events.find(event=>event.id===seriesId&&event.weekday!==undefined);if(!series||date<series.from||date>series.until||new Date(date+'T12:00:00Z').getUTCDay()!==series.weekday)throw new Error('找不到此週期行程日期。');if(!isRecord(changes))throw new Error('單次行程內容不正確。');const updated=excludeOccurrence(events,seriesId,date);return [...updated,{...series,...changes,id:crypto.randomUUID(),date:changes.date??date,weekday:undefined,from:undefined,until:undefined,excludedDates:undefined,overrides:undefined}];}
+export function conflicts(events){if(!Array.isArray(events)||events.some(e=>!isRecord(e)))throw Error('行程必須為有效清單。');const timed=events.filter(e=>e.status!=='cancelled'&&e.start&&e.end),result=[];for(let i=0;i<timed.length;i++)for(let j=i+1;j<timed.length;j++)if(timed[i].start<timed[j].end&&timed[j].start<timed[i].end)result.push([timed[i].id,timed[j].id]);return result;}
+function validateOccurrenceOverride(series,date,override){const allowed=OVERRIDE_FIELDS;eventDetails(override);if(!isRecord(override)||Object.keys(override).some(k=>!allowed.includes(k))||(override.title!==undefined&&(typeof override.title!=='string'||!override.title.trim()||override.title.length>120))||(override.start!==undefined&&!isTime(override.start))||(override.end!==undefined&&!isTime(override.end))||(override.category!==undefined&&!['course','study','rest','personal','deadline'].includes(override.category))||(override.notes!==undefined&&(typeof override.notes!=='string'||override.notes.length>2000))||(override.status!==undefined&&!['draft','confirmed','done','cancelled'].includes(override.status)))throw Error('單次行程覆寫內容不正確。');const start=override.start??series.start,end=override.end??series.end;if(Boolean(start)!==Boolean(end)||(start&&(!isTime(start)||!isTime(end)||end<=start)))throw Error('單次行程覆寫時段不正確。');if(date<series.from||date>series.until||new Date(date+'T12:00:00Z').getUTCDay()!==series.weekday)throw Error('單次行程覆寫日期不屬於此系列。');}
 export function parseSchedule(text){
- const data=JSON.parse(text);
- if(!data||!Array.isArray(data.events)||data.events.length>1000)throw new Error('作息檔需要 events 陣列，最多 1000 個事件。');
- const date=value=>{if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value)||new Date(value+'T12:00:00Z').toISOString().slice(0,10)!==value)throw new Error('日期格式不正確。');return value;};
- const time=value=>{if(value===undefined||value==='')return '';if(typeof value!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(value))throw new Error('時間格式不正確。');return value;};
+ if(typeof text!=='string'||text.length>30e6)throw Error('行程匯入文字格式錯誤或超過30MB。');
+ let data;try{data=JSON.parse(text)}catch{throw Error('行程 JSON 無法解析。')}
+ if(!isRecord(data)||!Array.isArray(data.events)||data.events.length>1000)throw new Error('作息檔需要 events 陣列，最多 1000 個事件。');
+ const time=value=>{if(value===undefined||value==='')return '';if(!isTime(value))throw new Error('時間格式不正確。');return value;};
  const events=data.events.map((item,index)=>{
-  if(typeof item.title!=='string'||!item.title.trim()||item.title.length>120)throw new Error('事件名称不正確。');
-  const event={id:typeof item.id==='string'&&item.id.length>0&&item.id.length<=120?item.id:'import-'+index,title:item.title.trim(),start:time(item.start),end:time(item.end),category:['course','study','rest','personal','deadline'].includes(item.category)?item.category:'personal',status:'draft',source:String(item.source??'本機匯入').slice(0,300),notes:String(item.notes??'').slice(0,2000)};
+  if(!isRecord(item)||typeof item.title!=='string'||!item.title.trim()||item.title.length>120)throw new Error('事件名稱不正確。');
+  const id=item.id===undefined||item.id===''?'import-'+index:item.id;if(typeof id!=='string'||!id.trim()||id.length>120)throw Error('事件ID不正確。');
+  if(item.category!==undefined&&!['course','study','rest','personal','deadline'].includes(item.category))throw Error('事件類別不正確。');
+  if(item.source!==undefined&&(typeof item.source!=='string'||item.source.length>300))throw Error('事件來源格式不正確。');
+  if(item.notes!==undefined&&(typeof item.notes!=='string'||item.notes.length>2000))throw Error('事件備註格式不正確。');
+  if(item.status!==undefined&&!['draft','confirmed','done','cancelled'].includes(item.status))throw Error('事件狀態不正確。');
+  const event={...eventDetails(item,{series:item.weekday!==undefined}),id,title:item.title.trim(),start:time(item.start),end:time(item.end),category:item.category??'personal',status:item.status??'draft',source:item.source??'本機匯入',notes:item.notes??''};
+  if(Boolean(event.start)!==Boolean(event.end))throw new Error('行程必須同時提供開始和結束時間，或都留白表示全天。');
   if(event.start&&event.end&&event.end<=event.start)throw new Error('事件結束時間必須晚於開始時間。');
-  if(item.weekday!==undefined){if(!Number.isInteger(item.weekday)||item.weekday<0||item.weekday>6)throw new Error('星期不正確。');event.weekday=item.weekday;event.from=date(item.from);event.until=date(item.until);if(event.until<event.from)throw new Error('週期範圍不正確。');const exclusions=item.excludedDates??[];if(!Array.isArray(exclusions)||exclusions.length>200)throw new Error('單次例外日期格式不正確。');event.excludedDates=[...new Set(exclusions.map(date))];if(event.excludedDates.some(day=>day<event.from||day>event.until||new Date(day+'T12:00:00Z').getUTCDay()!==event.weekday))throw new Error('單次例外日期必須落在重複行程範圍與星期內。');}
-  else event.date=date(item.date);
+  if(item.weekday!==undefined){if(item.date!==undefined||!Number.isInteger(item.weekday)||item.weekday<0||item.weekday>6)throw new Error('星期或週期格式不正確。');event.weekday=item.weekday;event.from=item.from;event.until=item.until;if(!isDate(event.from)||!isDate(event.until)||event.until<event.from)throw new Error('週期範圍不正確。');const exclusions=item.excludedDates??[];if(!Array.isArray(exclusions)||exclusions.length>400)throw new Error('單次例外日期格式不正確。');event.excludedDates=[...new Set(exclusions)];if(event.excludedDates.some(day=>!isDate(day)||day<event.from||day>event.until||new Date(day+'T12:00:00Z').getUTCDay()!==event.weekday))throw new Error('單次例外日期必須落在重複行程範圍與星期內。');
+   if(item.overrides!==undefined){if(!isRecord(item.overrides)||Object.keys(item.overrides).length>400)throw Error('單次行程覆寫格式不正確。');event.overrides={};for(const [day,override] of Object.entries(item.overrides)){if(!isDate(day))throw Error('覆寫日期不正確。');validateOccurrenceOverride(event,day,override);if(event.excludedDates.includes(day))throw Error('同一日期不可同時排除並覆寫行程。');event.overrides[day]=structuredClone(override);}}
+  }else{if(!isDate(item.date))throw Error('單次行程日期不正確。');event.date=item.date;if(item.from!==undefined||item.until!==undefined||item.overrides!==undefined||item.excludedDates!==undefined)throw Error('單次行程不可附帶重複規則。');}
   return event;
  });
  if(new Set(events.map(event=>event.id)).size!==events.length)throw new Error('事件代號重複。');
- const weeks=(Array.isArray(data.weeks)?data.weeks:[]).slice(0,60).map(week=>({number:Number(week.number),start:date(week.start),end:date(week.end),title:String(week.title??'').slice(0,300),focus:String(week.focus??'').slice(0,1200)}));
+ if(data.weeks!==undefined&&(!Array.isArray(data.weeks)||data.weeks.length>60))throw Error('週計畫最多60週且必須為清單。');
+ const weeks=(data.weeks??[]).map((week,index)=>{if(!isRecord(week)||!Number.isInteger(week.number)||week.number<1||week.number>60||!isDate(week.start)||!isDate(week.end)||week.end<week.start||typeof (week.title??'')!=='string'||(week.title??'').length>300||typeof (week.focus??'')!=='string'||(week.focus??'').length>1200)throw Error('週計畫資料不正確。');return {number:week.number,start:week.start,end:week.end,title:week.title??'',focus:week.focus??''};});
+ for(let i=1;i<weeks.length;i++)if(weeks[i].start<=weeks[i-1].end)throw Error('週計畫日期不可重疊或倒序。');
  return {timezone:'Asia/Taipei',status:'draft',events,weeks};
 }
-const escapeICS=value=>String(value??'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/;/g,'\\;').replace(/,/g,'\\,');
-export function toICS(events){const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//College OS//Local Calendar//ZH','CALSCALE:GREGORIAN'];const timestamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');for(const event of events){let date=event.date;if(event.weekday!==undefined){const first=new Date(event.from+'T12:00:00Z');while(first.getUTCDay()!==event.weekday)first.setUTCDate(first.getUTCDate()+1);date=first.toISOString().slice(0,10);}if(!date)continue;const compact=date.replace(/-/g,'');lines.push('BEGIN:VEVENT',`UID:${escapeICS(event.id)}@college-os.local`,`DTSTAMP:${timestamp}`,`SUMMARY:${escapeICS(event.title)}`);if(event.start){lines.push(`DTSTART;TZID=Asia/Taipei:${compact}T${event.start.replace(':','')}00`);if(event.end)lines.push(`DTEND;TZID=Asia/Taipei:${compact}T${event.end.replace(':','')}00`);}else lines.push(`DTSTART;VALUE=DATE:${compact}`);if(event.weekday!==undefined){lines.push(`RRULE:FREQ=WEEKLY;UNTIL=${event.until.replace(/-/g,'')}T155959Z`);if(event.excludedDates?.length)lines.push(`EXDATE;TZID=Asia/Taipei:${event.excludedDates.map(d=>d.replace(/-/g,'')+'T'+(event.start??'00:00').replace(':','')+'00').join(',')}`);}lines.push(`DESCRIPTION:${escapeICS(event.notes??'')}\\n${escapeICS(event.source??'自行新增')} ${event.status==='draft'?'待核對':''}`,'END:VEVENT');}lines.push('END:VCALENDAR');return lines.join('\r\n')+'\r\n';}
+const escapeICS=value=>String(value??'').replace(/\\/g,'\\\\').replace(/\r\n|\n|\r/g,'\\n').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'').replace(/;/g,'\\;').replace(/,/g,'\\,');
+function foldICS(line){const out=[];let part='',bytes=0;for(const char of line){const size=new TextEncoder().encode(char).length;if(bytes+size>73){out.push(part);part=' ';bytes=1;}part+=char;bytes+=size;}out.push(part);return out.join('\r\n');}
+export function toICS(events) {
+  if (!Array.isArray(events) || events.length > 10000)
+    throw Error('ICS行程筆數不正確。');
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//College OS//Local Calendar//ZH', 'CALSCALE:GREGORIAN'];
+  const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  const weekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  const addEvent = (event, date, uid, recurrenceId = null, extraLines = []) => {
+    const compact = date.replace(/-/g, '');
+    const start = event.start ?? '', end = event.end ?? '';
+    if (Boolean(start) !== Boolean(end) || (start && (!isTime(start) || !isTime(end) || end <= start)))
+      throw Error('ICS行程時間不完整或不正確。');
+    lines.push('BEGIN:VEVENT', `UID:${escapeICS(uid)}@college-os.local`, `DTSTAMP:${timestamp}`);
+    if (recurrenceId) {
+      const value = recurrenceId.date.replace(/-/g, '') + (start ? `T${recurrenceId.start.replace(':', '')}00` : '');
+      lines.push(`${start ? 'RECURRENCE-ID;TZID=Asia/Taipei' : 'RECURRENCE-ID;VALUE=DATE'}:${value}`);
+    }
+    lines.push(`SUMMARY:${escapeICS(event.title)}`);
+    if (start) lines.push(`DTSTART;TZID=Asia/Taipei:${compact}T${start.replace(':', '')}00`, `DTEND;TZID=Asia/Taipei:${compact}T${end.replace(':', '')}00`);
+    else lines.push(`DTSTART;VALUE=DATE:${compact}`, `DTEND;VALUE=DATE:${nextDate(date).replace(/-/g, '')}`);
+    if (event.notes !== undefined && typeof event.notes !== 'string') throw Error('ICS備註必須為文字。');
+    const detail=[event.notes, event.subject&&`科目：${event.subject}`,event.teacher&&`老師：${event.teacher}`,event.room&&`教室：${event.room}`,event.outcome&&`成果：${event.outcome}`,event.method&&`方法：${event.method}`].filter(Boolean).join('\n');
+    lines.push(...extraLines, `STATUS:${event.status==='cancelled'?'CANCELLED':event.status==='draft'?'TENTATIVE':'CONFIRMED'}`, `DESCRIPTION:${escapeICS(detail)}`, 'END:VEVENT');
+  };
+  for (const event of events) {
+    const recurring = isRecord(event) && event.weekday !== undefined;
+    if (!isRecord(event) || (!recurring && !isDate(event.date)) ||
+      (recurring && (!Number.isInteger(event.weekday) || event.weekday < 0 || event.weekday > 6 || !isDate(event.from) || !isDate(event.until) || event.until < event.from)) ||
+      typeof event.id !== 'string' || !event.id.trim() || typeof event.title !== 'string' || !event.title.trim())
+      throw Error('ICS 行程缺少有效日期、ID或名稱。');
+    if (event.excludedDates !== undefined && (!Array.isArray(event.excludedDates) || event.excludedDates.some(day => !isDate(day) || day < event.from || day > event.until || new Date(day + 'T12:00:00Z').getUTCDay() !== event.weekday)))
+      throw Error('ICS例外日期不正確。');
+    if (!recurring) {
+      addEvent(event, event.date, event.id);
+      continue;
+    }
+    if (event.overrides !== undefined && (!isRecord(event.overrides) || Object.keys(event.overrides).length > 400))
+      throw Error('ICS單次行程覆寫格式不正確。');
+    for (const [date, override] of Object.entries(event.overrides ?? {})) {
+      const allowed = OVERRIDE_FIELDS;eventDetails(override);
+      if (!isDate(date) || date < event.from || date > event.until || new Date(date + 'T12:00:00Z').getUTCDay() !== event.weekday || (event.excludedDates ?? []).includes(date) || !isRecord(override) || Object.keys(override).some(key => !allowed.includes(key)))
+        throw Error('ICS單次行程覆寫格式不正確。');
+      const detached = { ...event, ...override };
+      if (typeof detached.title !== 'string' || !detached.title.trim()) throw Error('ICS覆寫名稱不正確。');
+      addEvent(detached, date, event.id, { date, start: event.start ?? '00:00' });
+    }
+    let first = event.from;
+    while (new Date(first + 'T12:00:00Z').getUTCDay() !== event.weekday) first = nextDate(first);
+    if (first > event.until) continue;
+    const until = event.until.replace(/-/g, '') + (event.start ? 'T155959Z' : '');
+    const extraLines = [`RRULE:FREQ=WEEKLY;BYDAY=${weekdays[event.weekday]};UNTIL=${until}`];
+    if (event.excludedDates?.length) {
+      const values = event.excludedDates.map(date => date.replace(/-/g, '') + (event.start ? `T${event.start.replace(':', '')}00` : ''));
+      extraLines.push(`${event.start ? 'EXDATE;TZID=Asia/Taipei' : 'EXDATE;VALUE=DATE'}:${values.join(',')}`);
+    }
+    addEvent(event, first, event.id, null, extraLines);
+  }
+  lines.push('END:VCALENDAR');
+  return lines.map(foldICS).join('\r\n') + '\r\n';
+}
+function nextDate(date){const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10);}
