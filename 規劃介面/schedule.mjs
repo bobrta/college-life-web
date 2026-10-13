@@ -2,7 +2,7 @@ import { clock, range } from "../規劃核心/time.mjs";
 export function renderSchedule(
   container,
   result,
-  { period, limit, onFocus, eventsOnDate = () => [] },
+  { period, limit, onFocus, eventsOnDate = () => [], displayDates = [] },
 ) {
   const doc = container.ownerDocument;
   const make = (tag, text, cls) => {
@@ -13,12 +13,14 @@ export function renderSchedule(
   };
   const h = (n) => (n / 60).toFixed(1) + "h";
   function dayCard(day) {
-    const article = make("article", undefined, "day");
+    const article = make("article", undefined, day.past ? "day past-day" : "day");
+    article.append(make("h3", day.date));
     article.append(
-      make("h3", day.date),
       make(
         "p",
-        `已排 ${h(day.used)} / 可排 ${h(day.budget)} · ${day.ids.size}/${limit} 件`,
+        day.past
+          ? "已過日期；只顯示固定行程"
+          : `已排 ${h(day.used)} / 可排 ${h(day.budget)} · ${day.ids.size}/${limit} 件`,
       ),
     );
     const fixed = eventsOnDate(day.date);
@@ -46,12 +48,25 @@ export function renderSchedule(
   }
   container.replaceChildren();
   container.classList.toggle("week-grid", period === "week");
-  if (!result.days.length) {
+  if (!result.days.length && !(period === "week" && displayDates.length)) {
     container.append(make("p", "所選週期已結束，請切換日期。"));
     return;
   }
   if (period === "day" || period === "week") {
-    for (const day of result.days) {
+    const days =
+      period === "week" && displayDates.length
+        ? displayDates.map((date) =>
+            result.days.find((day) => day.date === date) || {
+              date,
+              used: 0,
+              budget: 0,
+              ids: new Set(),
+              blocks: [],
+              past: true,
+            },
+          )
+        : result.days;
+    for (const day of days) {
       const panel = dayCard(day);
       panel.classList.add("panel");
       if (period === "day") panel.classList.add("single-day");
