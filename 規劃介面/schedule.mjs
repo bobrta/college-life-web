@@ -1,5 +1,9 @@
 import { clock, range } from "../規劃核心/time.mjs";
-export function renderSchedule(container, result, { period, limit, onFocus }) {
+export function renderSchedule(
+  container,
+  result,
+  { period, limit, onFocus, eventsOnDate = () => [] },
+) {
   const doc = container.ownerDocument;
   const make = (tag, text, cls) => {
     const e = doc.createElement(tag);
@@ -17,6 +21,12 @@ export function renderSchedule(container, result, { period, limit, onFocus }) {
         `已排 ${h(day.used)} / 可排 ${h(day.budget)} · ${day.ids.size}/${limit} 件`,
       ),
     );
+    const fixed = eventsOnDate(day.date);
+    for (const event of fixed) {
+      const row = make("div", undefined, "block fixed-event");
+      row.append(make("span", `${event.start}–${event.end}　${event.title}`));
+      article.append(row);
+    }
     for (const block of day.blocks) {
       const row = make("div", undefined, "block");
       row.append(
@@ -31,18 +41,20 @@ export function renderSchedule(container, result, { period, limit, onFocus }) {
       row.append(b);
       article.append(row);
     }
-    if (!day.blocks.length) article.append(make("p", "未排工作"));
+    if (!day.blocks.length && !fixed.length) article.append(make("p", "留白日程"));
     return article;
   }
   container.replaceChildren();
+  container.classList.toggle("week-grid", period === "week");
   if (!result.days.length) {
     container.append(make("p", "所選週期已結束，請切換日期。"));
     return;
   }
-  if (period === "week") {
+  if (period === "day" || period === "week") {
     for (const day of result.days) {
       const panel = dayCard(day);
       panel.classList.add("panel");
+      if (period === "day") panel.classList.add("single-day");
       container.append(panel);
     }
     return;
